@@ -170,5 +170,62 @@ void afficher_profile_entraineur(const char *nom, const char *id);
 // Fonctions utilitaires
 void parser_specialites(const char *specialite_str, Specialites *spec);
 int correspond_specialites(const char *objectifs_str, const Specialites *spec_entraineur);
+//gestion du cours
+#define MAX_COURS 100
+#define MAX_INSCRIPTIONS 200
+
+typedef struct {
+    char id[10];
+    char nom[50];
+    char type[20];
+    char niveau[20];
+    char jours[100];
+    int heure;
+    int minute;
+    char periode[3];
+    char coach[50];
+    char equipement[100];
+} Cours;
+
+typedef struct {
+    char id_membre[10];
+    char id_cours[10];
+    char date[20];
+} Inscription;
+
+// Fonctions de gestion des cours
+void ajouter_cours(Cours c);
+int supprimer_cours(char *id);
+Cours rechercher_cours(char *id);
+void modifier_cours(Cours c);
+int get_tous_cours(Cours liste[]);
+void afficher_cours_treeview(GtkWidget *treeview);
+void afficher_inscriptions_treeview(GtkWidget *treeview);
+void rechercher_et_afficher(GtkWidget *treeview, char *id_recherche);
+void vider_treeview(GtkWidget *treeview);
+int cours_existe(char *id);
+
+// Fonctions de gestion des inscriptions
+void inscrire_membre(Inscription ins);
+int est_inscrit(char *id_membre, char *id_cours);
+int get_nombre_inscriptions(char *id_cours);
+
+// NOUVELLES FONCTIONS POUR AMÉLIORATIONS
+char* generer_id_automatique();
+int verifier_id_unique(char *id);
+int verifier_format_heure(int heure, int minute);
+int verifier_format_id(char *id);
+void charger_coachs_depuis_fichier(GtkWidget *combo);
+void get_statistiques(int *total_cours, int *total_inscrits, int *cours_collectif, int *cours_individuel);
+void get_statistiques_detaillees(int *total_cours, int *total_inscrits,
+                                int *cours_collectif, int *cours_individuel,
+                                int *inscriptions_par_jour, float *moyenne_inscrits);
+
+// Fonctions d'édition dans TreeView
+void on_nom_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
+void on_type_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
+void on_niveau_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
+void on_coach_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
+
 
 #endif

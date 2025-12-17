@@ -2368,3 +2368,739 @@ void afficher_profile_entraineur(const char *nom, const char *id) {
         gtk_widget_show(window);
     }
 }
+//gestion du cours
+// ==================== FONCTIONS COURS ====================
+
+void ajouter_cours(Cours c) {
+    FILE *f = fopen("cours.txt", "a");
+    if (f != NULL) {
+        fprintf(f, "%s|%s|%s|%s|%s|%d|%d|%s|%s|%s\n",
+                c.id, c.nom, c.type, c.niveau, c.jours,
+                c.heure, c.minute, c.periode, c.coach, c.equipement);
+        fclose(f);
+        printf("Cours ajouté: %s - %s\n", c.id, c.nom);
+    } else {
+        printf("Erreur: Impossible d'ouvrir cours.txt en écriture\n");
+    }
+}
+
+int supprimer_cours(char *id) {
+    FILE *f = fopen("cours.txt", "r");
+    FILE *temp = fopen("temp.txt", "w");
+    int trouve = 0;
+    char ligne[256];
+    
+    if (f == NULL || temp == NULL) {
+        printf("Erreur: Impossible d'ouvrir les fichiers\n");
+        if (f) fclose(f);
+        if (temp) fclose(temp);
+        return 0;
+    }
+    
+    while (fgets(ligne, sizeof(ligne), f) != NULL) {
+        ligne[strcspn(ligne, "\n")] = 0;
+        
+        if (strlen(ligne) == 0) continue;
+        
+        char current_id[10];
+        sscanf(ligne, "%[^|]", current_id);
+        
+        if (strcmp(current_id, id) == 0) {
+            trouve = 1;
+            printf("Cours supprimé: %s\n", id);
+        } else {
+            fprintf(temp, "%s\n", ligne);
+        }
+    }
+    
+    fclose(f);
+    fclose(temp);
+    
+    remove("cours.txt");
+    rename("temp.txt", "cours.txt");
+    
+    return trouve;
+}
+
+Cours rechercher_cours(char *id) {
+    Cours c;
+    FILE *f = fopen("cours.txt", "r");
+    char ligne[256];
+    
+    strcpy(c.id, "");
+    
+    if (f != NULL) {
+        while (fgets(ligne, sizeof(ligne), f) != NULL) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) == 0) continue;
+            
+            char current_id[10];
+            sscanf(ligne, "%[^|]", current_id);
+            
+            if (strcmp(current_id, id) == 0) {
+                sscanf(ligne, "%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%d|%d|%[^|]|%[^|]|%[^\n]",
+                      c.id, c.nom, c.type, c.niveau, c.jours,
+                      &c.heure, &c.minute, c.periode, c.coach, c.equipement);
+                fclose(f);
+                return c;
+            }
+        }
+        fclose(f);
+    }
+    
+    strcpy(c.id, "");
+    return c;
+}
+
+void modifier_cours(Cours c_modifie) {
+    FILE *f = fopen("cours.txt", "r");
+    FILE *temp = fopen("temp.txt", "w");
+    char ligne[256];
+    
+    if (f != NULL && temp != NULL) {
+        while (fgets(ligne, sizeof(ligne), f) != NULL) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) == 0) continue;
+            
+            char current_id[10];
+            sscanf(ligne, "%[^|]", current_id);
+            
+            if (strcmp(current_id, c_modifie.id) == 0) {
+                fprintf(temp, "%s|%s|%s|%s|%s|%d|%d|%s|%s|%s\n",
+                        c_modifie.id, c_modifie.nom, c_modifie.type, 
+                        c_modifie.niveau, c_modifie.jours,
+                        c_modifie.heure, c_modifie.minute, 
+                        c_modifie.periode, c_modifie.coach, 
+                        c_modifie.equipement);
+            } else {
+                fprintf(temp, "%s\n", ligne);
+            }
+        }
+        fclose(f);
+        fclose(temp);
+        
+        remove("cours.txt");
+        rename("temp.txt", "cours.txt");
+        
+        printf("Cours modifié: %s\n", c_modifie.id);
+    }
+}
+
+int get_tous_cours(Cours liste[]) {
+    FILE *f = fopen("cours.txt", "r");
+    int count = 0;
+    char ligne[256];
+    
+    if (f == NULL) {
+        printf("Erreur: Impossible d'ouvrir cours.txt en lecture\n");
+        return 0;
+    }
+    
+    while (fgets(ligne, sizeof(ligne), f) != NULL && count < MAX_COURS) {
+        ligne[strcspn(ligne, "\n")] = 0;
+        
+        if (strlen(ligne) == 0) continue;
+        
+        Cours c;
+        int result = sscanf(ligne, "%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%d|%d|%[^|]|%[^|]|%[^\n]",
+                           c.id, c.nom, c.type, c.niveau, c.jours,
+                           &c.heure, &c.minute, c.periode, c.coach, c.equipement);
+        
+        if (result == 10) {
+            liste[count] = c;
+            count++;
+        }
+    }
+    
+    fclose(f);
+    return count;
+}
+
+void vider_treeview(GtkWidget *treeview) {
+    if (!treeview || !GTK_IS_TREE_VIEW(treeview)) return;
+    
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    if (model != NULL && GTK_IS_LIST_STORE(model)) {
+        gtk_list_store_clear(GTK_LIST_STORE(model));
+    }
+}
+
+void afficher_cours_treeview(GtkWidget *treeview) {
+    if (!treeview || !GTK_IS_TREE_VIEW(treeview)) {
+        printf("Erreur: TreeView invalide\n");
+        return;
+    }
+    
+    GtkListStore *store;
+    GtkTreeIter iter;
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+    
+    store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(treeview)));
+    
+    if (store == NULL) {
+        store = gtk_list_store_new(10, 
+                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, 
+                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+                                   G_TYPE_INT);
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        // Colonne ID
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("ID", renderer, "text", 0, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        gtk_tree_view_column_set_min_width(column, 50);
+        
+        // Colonne Nom (éditable)
+        renderer = gtk_cell_renderer_text_new();
+        g_object_set(renderer, "editable", TRUE, NULL);
+        g_signal_connect(renderer, "edited", G_CALLBACK(on_nom_cours_edited), treeview);
+        column = gtk_tree_view_column_new_with_attributes("Nom", renderer, "text", 1, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        gtk_tree_view_column_set_min_width(column, 120);
+        
+        // Colonne Type (éditable)
+        renderer = gtk_cell_renderer_text_new();
+        g_object_set(renderer, "editable", TRUE, NULL);
+        g_signal_connect(renderer, "edited", G_CALLBACK(on_type_cours_edited), treeview);
+        column = gtk_tree_view_column_new_with_attributes("Type", renderer, "text", 2, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        // Colonne Niveau (éditable)
+        renderer = gtk_cell_renderer_text_new();
+        g_object_set(renderer, "editable", TRUE, NULL);
+        g_signal_connect(renderer, "edited", G_CALLBACK(on_niveau_cours_edited), treeview);
+        column = gtk_tree_view_column_new_with_attributes("Niveau", renderer, "text", 3, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        // Colonne Jours
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Jours", renderer, "text", 4, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        gtk_tree_view_column_set_min_width(column, 120);
+        
+        // Colonne Heure
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Heure", renderer, "text", 5, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        // Colonne Période
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Période", renderer, "text", 6, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        // Colonne Coach (éditable)
+        renderer = gtk_cell_renderer_text_new();
+        g_object_set(renderer, "editable", TRUE, NULL);
+        g_signal_connect(renderer, "edited", G_CALLBACK(on_coach_cours_edited), treeview);
+        column = gtk_tree_view_column_new_with_attributes("Coach", renderer, "text", 7, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        // Colonne Équipement
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Équipement", renderer, "text", 8, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        // Colonne Inscrits
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Inscrits", renderer, "text", 9, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        printf("TreeView initialisé avec colonnes éditable\n");
+    } else {
+        gtk_list_store_clear(store);
+    }
+    
+    Cours liste_cours[MAX_COURS];
+    int nb_cours = get_tous_cours(liste_cours);
+    
+    printf("Chargement de %d cours dans le TreeView\n", nb_cours);
+    
+    for (int i = 0; i < nb_cours; i++) {
+        char heure_format[10];
+        sprintf(heure_format, "%02d:%02d", liste_cours[i].heure, liste_cours[i].minute);
+        
+        int nb_inscrits = get_nombre_inscriptions(liste_cours[i].id);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+                          0, liste_cours[i].id,
+                          1, liste_cours[i].nom,
+                          2, liste_cours[i].type,
+                          3, liste_cours[i].niveau,
+                          4, liste_cours[i].jours,
+                          5, heure_format,
+                          6, liste_cours[i].periode,
+                          7, liste_cours[i].coach,
+                          8, liste_cours[i].equipement,
+                          9, nb_inscrits,
+                          -1);
+    }
+}
+
+void afficher_inscriptions_treeview(GtkWidget *treeview) {
+    if (!treeview || !GTK_IS_TREE_VIEW(treeview)) {
+        printf("Erreur: TreeView d'inscriptions invalide\n");
+        return;
+    }
+    
+    GtkListStore *store;
+    GtkTreeIter iter;
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+    
+    store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(treeview)));
+    
+    if (store == NULL) {
+        store = gtk_list_store_new(4, 
+                                   G_TYPE_STRING,   // 0: ID Membre
+                                   G_TYPE_STRING,   // 1: ID Cours
+                                   G_TYPE_STRING,   // 2: Date
+                                   G_TYPE_STRING);  // 3: Nom du cours
+        
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        // Colonne ID Membre
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("ID Membre", renderer, "text", 0, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        gtk_tree_view_column_set_min_width(column, 80);
+        
+        // Colonne ID Cours
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("ID Cours", renderer, "text", 1, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        gtk_tree_view_column_set_min_width(column, 70);
+        
+        // Colonne Nom du Cours
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Nom du Cours", renderer, "text", 3, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        gtk_tree_view_column_set_min_width(column, 150);
+        
+        // Colonne Date
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Date", renderer, "text", 2, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        gtk_tree_view_column_set_min_width(column, 100);
+        
+        printf("TreeView d'inscriptions initialisé\n");
+    } else {
+        gtk_list_store_clear(store);
+    }
+    
+    // Lire les inscriptions depuis le fichier
+    FILE *f = fopen("inscription.txt", "r");
+    if (f == NULL) {
+        printf("Aucun fichier d'inscription trouvé\n");
+        return;
+    }
+    
+    char ligne[100];
+    int count = 0;
+    
+    while (fgets(ligne, sizeof(ligne), f) != NULL) {
+        ligne[strcspn(ligne, "\n")] = 0;
+        
+        if (strlen(ligne) == 0) continue;
+        
+        char id_membre[10], id_cours[10], date[20];
+        if (sscanf(ligne, "%[^|]|%[^|]|%[^\n]", id_membre, id_cours, date) == 3) {
+            // Rechercher le nom du cours
+            Cours c = rechercher_cours(id_cours);
+            char nom_cours[50];
+            if (strlen(c.id) > 0) {
+                strcpy(nom_cours, c.nom);
+            } else {
+                strcpy(nom_cours, "Cours inconnu");
+            }
+            
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter,
+                              0, id_membre,
+                              1, id_cours,
+                              2, date,
+                              3, nom_cours,
+                              -1);
+            count++;
+        }
+    }
+    
+    fclose(f);
+    printf("%d inscriptions chargées dans le TreeView\n", count);
+}
+
+void rechercher_et_afficher(GtkWidget *treeview, char *id_recherche) {
+    if (!treeview || !GTK_IS_TREE_VIEW(treeview)) return;
+    
+    GtkListStore *store;
+    GtkTreeIter iter;
+    
+    store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(treeview)));
+    if (store == NULL) {
+        afficher_cours_treeview(treeview);
+        store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(treeview)));
+    }
+    
+    gtk_list_store_clear(store);
+    
+    if (strlen(id_recherche) == 0) {
+        afficher_cours_treeview(treeview);
+        return;
+    }
+    
+    Cours c = rechercher_cours(id_recherche);
+    if (strlen(c.id) > 0) {
+        char heure_format[10];
+        sprintf(heure_format, "%02d:%02d", c.heure, c.minute);
+        int nb_inscrits = get_nombre_inscriptions(c.id);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+                          0, c.id,
+                          1, c.nom,
+                          2, c.type,
+                          3, c.niveau,
+                          4, c.jours,
+                          5, heure_format,
+                          6, c.periode,
+                          7, c.coach,
+                          8, c.equipement,
+                          9, nb_inscrits,
+                          -1);
+    }
+}
+
+int cours_existe(char *id) {
+    Cours c = rechercher_cours(id);
+    return (strlen(c.id) > 0);
+}
+
+// ==================== FONCTIONS INSCRIPTION ====================
+
+void inscrire_membre(Inscription ins) {
+    FILE *f = fopen("inscription.txt", "a");
+    if (f != NULL) {
+        fprintf(f, "%s|%s|%s\n", ins.id_membre, ins.id_cours, ins.date);
+        fclose(f);
+        printf("Inscription ajoutée: Membre %s -> Cours %s\n", ins.id_membre, ins.id_cours);
+    }
+}
+
+int est_inscrit(char *id_membre, char *id_cours) {
+    FILE *f = fopen("inscription.txt", "r");
+    char ligne[100];
+    
+    if (f != NULL) {
+        while (fgets(ligne, sizeof(ligne), f) != NULL) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) == 0) continue;
+            
+            char id_m[10], id_c[10], date[20];
+            sscanf(ligne, "%[^|]|%[^|]|%[^\n]", id_m, id_c, date);
+            
+            if (strcmp(id_m, id_membre) == 0 && strcmp(id_c, id_cours) == 0) {
+                fclose(f);
+                return 1;
+            }
+        }
+        fclose(f);
+    }
+    return 0;
+}
+
+int get_nombre_inscriptions(char *id_cours) {
+    FILE *f = fopen("inscription.txt", "r");
+    int count = 0;
+    char ligne[100];
+    
+    if (f != NULL) {
+        while (fgets(ligne, sizeof(ligne), f) != NULL) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) == 0) continue;
+            
+            char id_m[10], id_c[10], date[20];
+            sscanf(ligne, "%[^|]|%[^|]|%[^\n]", id_m, id_c, date);
+            
+            if (strcmp(id_c, id_cours) == 0) {
+                count++;
+            }
+        }
+        fclose(f);
+    }
+    return count;
+}
+
+// ==================== NOUVELLES FONCTIONS ====================
+
+char* generer_id_automatique() {
+    static char id[10];
+    int max_id = 0;
+    
+    Cours liste[MAX_COURS];
+    int nb_cours = get_tous_cours(liste);
+    
+    for (int i = 0; i < nb_cours; i++) {
+        int current_id = atoi(liste[i].id);
+        if (current_id > max_id) {
+            max_id = current_id;
+        }
+    }
+    
+    max_id++;
+    sprintf(id, "%d", max_id);
+    return id;
+}
+
+int get_nombre_inscrits_total() {
+    FILE *f = fopen("inscription.txt", "r");
+    int count = 0;
+    char ligne[100];
+    
+    if (f != NULL) {
+        while (fgets(ligne, sizeof(ligne), f) != NULL) {
+            if (strlen(ligne) > 1) count++;
+        }
+        fclose(f);
+    }
+    return count;
+}
+
+void charger_coachs_depuis_fichier(GtkWidget *combo) {
+    if (!combo || !GTK_IS_COMBO_BOX(combo)) return;
+    
+    // Essayer de charger depuis coachs.txt
+    FILE *f = fopen("coachs.txt", "r");
+    if (f != NULL) {
+        char ligne[100];
+        printf("Chargement des coachs depuis coachs.txt\n");
+        
+        while (fgets(ligne, sizeof(ligne), f)) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            if (strlen(ligne) > 0) {
+                // Extraire juste le nom du coach (première partie avant |)
+                char coach_nom[50];
+                sscanf(ligne, "%[^|]", coach_nom);
+                gtk_combo_box_append_text(GTK_COMBO_BOX(combo), coach_nom);
+                printf("Coach ajouté: %s\n", coach_nom);
+            }
+        }
+        fclose(f);
+        
+        if (gtk_combo_box_get_model(GTK_COMBO_BOX(combo)) != NULL) {
+            gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+        }
+        printf("Coachs chargés depuis fichier\n");
+    } else {
+        // Valeurs par défaut
+        printf("Fichier coachs.txt non trouvé, chargement des coachs par défaut\n");
+        gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "C.Omar");
+        gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "A.Lina");
+        gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "H.Rached");
+        gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Z.Hamza");
+        gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+        printf("Coachs par défaut chargés\n");
+    }
+}
+
+void get_statistiques(int *total_cours, int *total_inscrits, int *cours_collectif, int *cours_individuel) {
+    *total_cours = 0;
+    *total_inscrits = 0;
+    *cours_collectif = 0;
+    *cours_individuel = 0;
+    
+    Cours liste[MAX_COURS];
+    int nb_cours = get_tous_cours(liste);
+    *total_cours = nb_cours;
+    
+    for (int i = 0; i < nb_cours; i++) {
+        int inscrits = get_nombre_inscriptions(liste[i].id);
+        *total_inscrits += inscrits;
+        
+        if (strcmp(liste[i].type, "collectif") == 0) {
+            (*cours_collectif)++;
+        } else if (strcmp(liste[i].type, "Individuel") == 0) {
+            (*cours_individuel)++;
+        }
+    }
+}
+
+// ==================== FONCTIONS D'ÉDITION DANS TREEVIEW ====================
+
+void on_nom_cours_edited(GtkCellRendererText *renderer, 
+                         gchar *path, 
+                         gchar *new_text, 
+                         gpointer user_data) {
+    GtkTreeView *treeview = GTK_TREE_VIEW(user_data);
+    GtkTreeModel *model = gtk_tree_view_get_model(treeview);
+    GtkTreeIter iter;
+    
+    if (gtk_tree_model_get_iter_from_string(model, &iter, path)) {
+        gchar *id;
+        gtk_tree_model_get(model, &iter, 0, &id, -1);
+        
+        // Mettre à jour le cours dans le fichier
+        Cours c = rechercher_cours(id);
+        if (strlen(c.id) > 0) {
+            printf("Modification du nom du cours %s: %s -> %s\n", id, c.nom, new_text);
+            strcpy(c.nom, new_text);
+            modifier_cours(c);
+            
+            // Mettre à jour le TreeView
+            GtkListStore *store = GTK_LIST_STORE(model);
+            gtk_list_store_set(store, &iter, 1, new_text, -1);
+        }
+        
+        g_free(id);
+    }
+}
+
+void on_type_cours_edited(GtkCellRendererText *renderer, 
+                         gchar *path, 
+                         gchar *new_text, 
+                         gpointer user_data) {
+    GtkTreeView *treeview = GTK_TREE_VIEW(user_data);
+    GtkTreeModel *model = gtk_tree_view_get_model(treeview);
+    GtkTreeIter iter;
+    
+    if (gtk_tree_model_get_iter_from_string(model, &iter, path)) {
+        gchar *id;
+        gtk_tree_model_get(model, &iter, 0, &id, -1);
+        
+        Cours c = rechercher_cours(id);
+        if (strlen(c.id) > 0) {
+            printf("Modification du type du cours %s: %s -> %s\n", id, c.type, new_text);
+            strcpy(c.type, new_text);
+            modifier_cours(c);
+            
+            GtkListStore *store = GTK_LIST_STORE(model);
+            gtk_list_store_set(store, &iter, 2, new_text, -1);
+        }
+        
+        g_free(id);
+    }
+}
+
+void on_niveau_cours_edited(GtkCellRendererText *renderer, 
+                           gchar *path, 
+                           gchar *new_text, 
+                           gpointer user_data) {
+    GtkTreeView *treeview = GTK_TREE_VIEW(user_data);
+    GtkTreeModel *model = gtk_tree_view_get_model(treeview);
+    GtkTreeIter iter;
+    
+    if (gtk_tree_model_get_iter_from_string(model, &iter, path)) {
+        gchar *id;
+        gtk_tree_model_get(model, &iter, 0, &id, -1);
+        
+        Cours c = rechercher_cours(id);
+        if (strlen(c.id) > 0) {
+            printf("Modification du niveau du cours %s: %s -> %s\n", id, c.niveau, new_text);
+            strcpy(c.niveau, new_text);
+            modifier_cours(c);
+            
+            GtkListStore *store = GTK_LIST_STORE(model);
+            gtk_list_store_set(store, &iter, 3, new_text, -1);
+        }
+        
+        g_free(id);
+    }
+}
+
+void on_coach_cours_edited(GtkCellRendererText *renderer, 
+                          gchar *path, 
+                          gchar *new_text, 
+                          gpointer user_data) {
+    GtkTreeView *treeview = GTK_TREE_VIEW(user_data);
+    GtkTreeModel *model = gtk_tree_view_get_model(treeview);
+    GtkTreeIter iter;
+    
+    if (gtk_tree_model_get_iter_from_string(model, &iter, path)) {
+        gchar *id;
+        gtk_tree_model_get(model, &iter, 0, &id, -1);
+        
+        Cours c = rechercher_cours(id);
+        if (strlen(c.id) > 0) {
+            printf("Modification du coach du cours %s: %s -> %s\n", id, c.coach, new_text);
+            strcpy(c.coach, new_text);
+            modifier_cours(c);
+            
+            GtkListStore *store = GTK_LIST_STORE(model);
+            gtk_list_store_set(store, &iter, 7, new_text, -1);
+        }
+        
+        g_free(id);
+    }
+}
+
+// ==================== FONCTIONS DE VALIDATION ====================
+
+int verifier_id_unique(char *id) {
+    return !cours_existe(id);
+}
+
+int verifier_format_heure(int heure, int minute) {
+    return (heure >= 0 && heure < 24 && minute >= 0 && minute < 60);
+}
+
+int verifier_format_id(char *id) {
+    // Vérifier que l'ID ne contient que des chiffres
+    for (int i = 0; id[i] != '\0'; i++) {
+        if (id[i] < '0' || id[i] > '9') {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+// ==================== FONCTIONS STATISTIQUES AVANCÉES ====================
+
+void get_statistiques_detaillees(int *total_cours, int *total_inscrits,
+                                int *cours_collectif, int *cours_individuel,
+                                int *inscriptions_par_jour, float *moyenne_inscrits) {
+    *total_cours = 0;
+    *total_inscrits = 0;
+    *cours_collectif = 0;
+    *cours_individuel = 0;
+    *moyenne_inscrits = 0;
+    
+    // Initialiser le tableau des jours
+    for (int i = 0; i < 5; i++) {
+        inscriptions_par_jour[i] = 0;
+    }
+    
+    Cours liste[MAX_COURS];
+    int nb_cours = get_tous_cours(liste);
+    *total_cours = nb_cours;
+    
+    for (int i = 0; i < nb_cours; i++) {
+        int inscrits = get_nombre_inscriptions(liste[i].id);
+        *total_inscrits += inscrits;
+        
+        if (strcmp(liste[i].type, "collectif") == 0) {
+            (*cours_collectif)++;
+        } else if (strcmp(liste[i].type, "Individuel") == 0) {
+            (*cours_individuel)++;
+        }
+        
+        // Compter les inscriptions par jour
+        if (strstr(liste[i].jours, "Lundi")) inscriptions_par_jour[0] += inscrits;
+        if (strstr(liste[i].jours, "Mardi")) inscriptions_par_jour[1] += inscrits;
+        if (strstr(liste[i].jours, "Mercredi")) inscriptions_par_jour[2] += inscrits;
+        if (strstr(liste[i].jours, "Jeudi")) inscriptions_par_jour[3] += inscrits;
+        if (strstr(liste[i].jours, "Vendredi")) inscriptions_par_jour[4] += inscrits;
+        
+        *moyenne_inscrits += inscrits;
+    }
+    
+    if (nb_cours > 0) {
+        *moyenne_inscrits /= nb_cours;
+    }
+}

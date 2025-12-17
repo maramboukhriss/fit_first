@@ -5292,4 +5292,875 @@ void on_button99_clicked(GtkWidget *button, gpointer user_data) {
     
     g_print("DEBUG: Fenêtre login fermée\n");
 }
+// gestion du cours
 
+
+// Variables globales
+int jours_selectionnes[5] = {0, 0, 0, 0, 0};
+char periode_selectionnee[3] = "AM";
+int checkboxes_treeview[100] = {0}; // Pour les checkbox dans TreeView
+
+// ==================== FONCTIONS UTILITAIRES ====================
+
+void afficher_message(GtkWindow *parent, const char *type, const char *message) {
+    GtkMessageType msg_type;
+    
+    if (strcmp(type, "info") == 0) msg_type = GTK_MESSAGE_INFO;
+    else if (strcmp(type, "warning") == 0) msg_type = GTK_MESSAGE_WARNING;
+    else if (strcmp(type, "error") == 0) msg_type = GTK_MESSAGE_ERROR;
+    else msg_type = GTK_MESSAGE_INFO;
+    
+    GtkWidget *dialog = gtk_message_dialog_new(parent,
+                                              GTK_DIALOG_MODAL,
+                                              msg_type,
+                                              GTK_BUTTONS_OK,
+                                              "%s", message);
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+
+void actualiser_toutes_treeviews(GtkWidget *fenetre) {
+    GtkWidget *treeview1 = lookup_widget(fenetre, "treeviewSupprimerYCH");
+    GtkWidget *treeview2 = lookup_widget(fenetre, "treeviewRECHARCHEYCH");
+    
+    if (treeview1) afficher_cours_treeview(treeview1);
+    if (treeview2) afficher_cours_treeview(treeview2);
+}
+
+void charger_cours_dans_formulaire(char *id_cours, GtkWidget *fenetre) {
+    Cours c = rechercher_cours(id_cours);
+    
+    if (strlen(c.id) == 0) {
+        afficher_message(GTK_WINDOW(fenetre), "error", "Cours non trouvé!");
+        return;
+    }
+    
+    GtkWidget *entryId = lookup_widget(fenetre, "entry2");
+    GtkWidget *entryNom = lookup_widget(fenetre, "entryNomDeCourModifactionYCH");
+    GtkWidget *spinHeure = lookup_widget(fenetre, "spinbuttonheurModifactionYCH");
+    GtkWidget *spinMin = lookup_widget(fenetre, "spinbuttonMinModifactionYCH");
+    GtkWidget *comboEquip = lookup_widget(fenetre, "comboboxentryEquipementMYCH");
+    
+    if (entryId) gtk_entry_set_text(GTK_ENTRY(entryId), c.id);
+    if (entryNom) gtk_entry_set_text(GTK_ENTRY(entryNom), c.nom);
+    if (spinHeure) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinHeure), c.heure);
+    if (spinMin) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinMin), c.minute);
+    
+    if (comboEquip && GTK_IS_COMBO_BOX(comboEquip)) {
+        GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(comboEquip)));
+        if (entry) gtk_entry_set_text(entry, c.equipement);
+    }
+    
+    // Définir le type
+    GtkWidget *comboType = lookup_widget(fenetre, "comboboxentry4TypeModifactionYCH");
+    if (comboType && GTK_IS_COMBO_BOX(comboType)) {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(comboType));
+        GtkTreeIter iter;
+        gboolean found = FALSE;
+        
+        if (model && gtk_tree_model_get_iter_first(model, &iter)) {
+            do {
+                gchar *type_text;
+                gtk_tree_model_get(model, &iter, 0, &type_text, -1);
+                if (type_text && strcmp(type_text, c.type) == 0) {
+                    gtk_combo_box_set_active_iter(GTK_COMBO_BOX(comboType), &iter);
+                    found = TRUE;
+                    g_free(type_text);
+                    break;
+                }
+                if (type_text) g_free(type_text);
+            } while (gtk_tree_model_iter_next(model, &iter));
+        }
+        
+        if (!found) {
+            gtk_combo_box_append_text(GTK_COMBO_BOX(comboType), c.type);
+            gtk_combo_box_set_active(GTK_COMBO_BOX(comboType), 0);
+        }
+    }
+    
+    // Définir le niveau
+    GtkWidget *comboNiveau = lookup_widget(fenetre, "comboboxentryNiveauModifactionYCH");
+    if (comboNiveau && GTK_IS_COMBO_BOX(comboNiveau)) {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(comboNiveau));
+        GtkTreeIter iter;
+        gboolean found = FALSE;
+        
+        if (model && gtk_tree_model_get_iter_first(model, &iter)) {
+            do {
+                gchar *niveau_text;
+                gtk_tree_model_get(model, &iter, 0, &niveau_text, -1);
+                if (niveau_text && strcmp(niveau_text, c.niveau) == 0) {
+                    gtk_combo_box_set_active_iter(GTK_COMBO_BOX(comboNiveau), &iter);
+                    found = TRUE;
+                    g_free(niveau_text);
+                    break;
+                }
+                if (niveau_text) g_free(niveau_text);
+            } while (gtk_tree_model_iter_next(model, &iter));
+        }
+        
+        if (!found) {
+            gtk_combo_box_append_text(GTK_COMBO_BOX(comboNiveau), c.niveau);
+            gtk_combo_box_set_active(GTK_COMBO_BOX(comboNiveau), 0);
+        }
+    }
+    
+    // Définir le coach
+    GtkWidget *comboCoach = lookup_widget(fenetre, "comboboxentryndcModifactionYCH");
+    if (comboCoach && GTK_IS_COMBO_BOX(comboCoach)) {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(comboCoach));
+        GtkTreeIter iter;
+        gboolean found = FALSE;
+        
+        if (model && gtk_tree_model_get_iter_first(model, &iter)) {
+            do {
+                gchar *coach_text;
+                gtk_tree_model_get(model, &iter, 0, &coach_text, -1);
+                if (coach_text && strcmp(coach_text, c.coach) == 0) {
+                    gtk_combo_box_set_active_iter(GTK_COMBO_BOX(comboCoach), &iter);
+                    found = TRUE;
+                    g_free(coach_text);
+                    break;
+                }
+                if (coach_text) g_free(coach_text);
+            } while (gtk_tree_model_iter_next(model, &iter));
+        }
+        
+        if (!found) {
+            gtk_combo_box_append_text(GTK_COMBO_BOX(comboCoach), c.coach);
+            gtk_combo_box_set_active(GTK_COMBO_BOX(comboCoach), 0);
+        }
+    }
+    
+    // Définir les jours
+    GtkWidget *checkL = lookup_widget(fenetre, "checkbuttonLModifactionYCH");
+    GtkWidget *checkMa = lookup_widget(fenetre, "checkbuttonMModifactionYCH");
+    GtkWidget *checkMe = lookup_widget(fenetre, "checkbuttonMEModifactionYCH");
+    GtkWidget *checkJ = lookup_widget(fenetre, "checkbuttonJModifactionYCH");
+    GtkWidget *checkV = lookup_widget(fenetre, "checkbuttonVModifactionYCH");
+    
+    if (checkL) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkL), (strstr(c.jours, "Lundi") != NULL));
+    if (checkMa) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkMa), (strstr(c.jours, "Mardi") != NULL));
+    if (checkMe) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkMe), (strstr(c.jours, "Mercredi") != NULL));
+    if (checkJ) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkJ), (strstr(c.jours, "Jeudi") != NULL));
+    if (checkV) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkV), (strstr(c.jours, "Vendredi") != NULL));
+    
+    // Définir AM/PM
+    GtkWidget *radioAM = lookup_widget(fenetre, "radiobuttonamModifactionYCH");
+    GtkWidget *radioPM = lookup_widget(fenetre, "radiobuttonpnModifactionYCH");
+    
+    if (strcmp(c.periode, "AM") == 0) {
+        if (radioAM) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radioAM), TRUE);
+        if (radioPM) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radioPM), FALSE);
+    } else {
+        if (radioAM) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radioAM), FALSE);
+        if (radioPM) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radioPM), TRUE);
+    }
+}
+
+void supprimer_cours_depuis_treeview(GtkTreeView *treeview, GtkTreePath *path) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(treeview), "Administrateur_gestion_de_cours");
+    
+    GtkTreeIter iter;
+    GtkTreeModel *model = gtk_tree_view_get_model(treeview);
+    
+    if (model && gtk_tree_model_get_iter(model, &iter, path)) {
+        gchar *id;
+        gtk_tree_model_get(model, &iter, 0, &id, -1);
+        
+        GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+                                                  GTK_DIALOG_MODAL,
+                                                  GTK_MESSAGE_QUESTION,
+                                                  GTK_BUTTONS_YES_NO,
+                                                  "Voulez-vous vraiment supprimer le cours %s?", id);
+        
+        gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        
+        if (response == GTK_RESPONSE_YES) {
+            if (supprimer_cours(id)) {
+                afficher_message(GTK_WINDOW(window), "info", "Cours supprimé avec succès!");
+                actualiser_toutes_treeviews(window);
+            } else {
+                afficher_message(GTK_WINDOW(window), "error", "Erreur lors de la suppression!");
+            }
+        }
+        g_free(id);
+    }
+}
+
+// ==================== NOUVELLES FONCTIONS ====================
+
+void on_buttonAutoID_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "Administrateur_gestion_de_cours");
+    GtkWidget *entryId = lookup_widget(window, "entryIdAjouterYCH");
+    
+    char *auto_id = generer_id_automatique();
+    gtk_entry_set_text(GTK_ENTRY(entryId), auto_id);
+    
+    afficher_message(GTK_WINDOW(window), "info", "ID automatique généré!");
+}
+
+// ==================== FONCTIONNALITÉ 1: AJOUTER ====================
+
+void on_buttonAjouterAjouterYCH_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "Administrateur_gestion_de_cours");
+    
+    // Récupérer les valeurs
+    GtkWidget *entryId = lookup_widget(window, "entryIdAjouterYCH");
+    GtkWidget *entryNom = lookup_widget(window, "entryNomCourAjouterYCH");
+    GtkWidget *spinHeure = lookup_widget(window, "spinbuttonHeureAjouteYCH");
+    GtkWidget *spinMin = lookup_widget(window, "spinbuttonDureeAjouterYCH");
+    GtkWidget *comboType = lookup_widget(window, "comboboxentryTypeCourAjouterYCH");
+    GtkWidget *comboNiveau = lookup_widget(window, "comboboxentryNiveauAjouterYCH");
+    GtkWidget *comboCoach = lookup_widget(window, "comboboxentryNomDeCoachYCH");
+    GtkWidget *comboEquip = lookup_widget(window, "comboboxentryequipementAYCH");
+    
+    // Validation
+    const gchar *id = gtk_entry_get_text(GTK_ENTRY(entryId));
+    const gchar *nom = gtk_entry_get_text(GTK_ENTRY(entryNom));
+    
+    if (strlen(id) == 0) {
+        // Générer ID automatique si vide
+        char *auto_id = generer_id_automatique();
+        id = auto_id;
+        gtk_entry_set_text(GTK_ENTRY(entryId), auto_id);
+    }
+    
+    // Vérification d'unicité
+    if (cours_existe((char*)id)) {
+        char *new_id = generer_id_automatique();
+        char message[100];
+        sprintf(message, "Cet ID existe déjà! Nouvel ID généré: %s", new_id);
+        afficher_message(GTK_WINDOW(window), "warning", message);
+        gtk_entry_set_text(GTK_ENTRY(entryId), new_id);
+        id = new_id;
+    }
+    
+    // Vérification format ID
+    if (!verifier_format_id((char*)id)) {
+        afficher_message(GTK_WINDOW(window), "error", "L'ID doit contenir uniquement des chiffres!");
+        return;
+    }
+    
+    if (strlen(nom) == 0) {
+        afficher_message(GTK_WINDOW(window), "error", "Le nom du cours est obligatoire!");
+        return;
+    }
+    
+    // Vérification format heure
+    int heure = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinHeure));
+    int minute = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinMin));
+    
+    if (!verifier_format_heure(heure, minute)) {
+        afficher_message(GTK_WINDOW(window), "error", "Heure invalide!");
+        return;
+    }
+    
+    // Récupérer les valeurs
+    Cours c;
+    strcpy(c.id, id);
+    strcpy(c.nom, nom);
+    
+    const gchar *type = gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboType));
+    const gchar *niveau = gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboNiveau));
+    const gchar *coach = gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboCoach));
+    
+    if (type) strcpy(c.type, type);
+    else strcpy(c.type, "Individuel"); // Valeur par défaut
+    
+    if (niveau) strcpy(c.niveau, niveau);
+    else strcpy(c.niveau, "Débutant"); // Valeur par défaut
+    
+    if (coach && strlen(coach) > 0) strcpy(c.coach, coach);
+    else strcpy(c.coach, "Coach par défaut"); // Affectation automatique
+    
+    if (comboEquip && GTK_IS_COMBO_BOX(comboEquip)) {
+        GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(comboEquip)));
+        if (entry) {
+            const gchar *equip = gtk_entry_get_text(entry);
+            if (equip) strcpy(c.equipement, equip);
+            else strcpy(c.equipement, "Équipement standard");
+        } else {
+            strcpy(c.equipement, "Équipement standard");
+        }
+    } else {
+        strcpy(c.equipement, "Équipement standard");
+    }
+    
+    c.heure = heure;
+    c.minute = minute;
+    strcpy(c.periode, periode_selectionnee);
+    
+    // Construire la chaîne des jours
+    char jours_str[100] = "";
+    if (jours_selectionnes[0]) strcat(jours_str, "Lundi,");
+    if (jours_selectionnes[1]) strcat(jours_str, "Mardi,");
+    if (jours_selectionnes[2]) strcat(jours_str, "Mercredi,");
+    if (jours_selectionnes[3]) strcat(jours_str, "Jeudi,");
+    if (jours_selectionnes[4]) strcat(jours_str, "Vendredi,");
+    
+    if (strlen(jours_str) == 0) {
+        // Affectation automatique: lundi par défaut
+        strcpy(jours_str, "Lundi");
+        jours_selectionnes[0] = 1;
+        GtkWidget *checkL = lookup_widget(window, "checkbuttonLundiAjouterYCH");
+        if (checkL) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkL), TRUE);
+    } else {
+        jours_str[strlen(jours_str)-1] = '\0';
+    }
+    strcpy(c.jours, jours_str);
+    
+    // Ajouter le cours
+    ajouter_cours(c);
+    
+    char message[150];
+    sprintf(message, "✅ Cours ajouté avec succès!\n\n"
+                     "ID: %s\n"
+                     "Nom: %s\n"
+                     "Coach: %s\n"
+                     "Affectation automatique appliquée",
+            c.id, c.nom, c.coach);
+    
+    afficher_message(GTK_WINDOW(window), "info", message);
+    
+    // Réinitialiser le formulaire
+    gtk_entry_set_text(GTK_ENTRY(entryId), "");
+    gtk_entry_set_text(GTK_ENTRY(entryNom), "");
+    
+    if (comboEquip && GTK_IS_COMBO_BOX(comboEquip)) {
+        GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(comboEquip)));
+        if (entry) gtk_entry_set_text(entry, "");
+    }
+    
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinHeure), 10);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinMin), 0);
+    
+    // Réinitialiser les cases à cocher
+    for (int i = 0; i < 5; i++) jours_selectionnes[i] = 0;
+    
+    GtkWidget *checkL = lookup_widget(window, "checkbuttonLundiAjouterYCH");
+    GtkWidget *checkMa = lookup_widget(window, "checkbuttonMardiAjouterYCH");
+    GtkWidget *checkMe = lookup_widget(window, "checkbuttonMercrediAjouterYCH");
+    GtkWidget *checkJ = lookup_widget(window, "checkbuttonJeudiAjouterYCH");
+    GtkWidget *checkV = lookup_widget(window, "checkbuttonVendrediAjouterYCH");
+    
+    if (checkL) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkL), FALSE);
+    if (checkMa) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkMa), FALSE);
+    if (checkMe) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkMe), FALSE);
+    if (checkJ) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkJ), FALSE);
+    if (checkV) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkV), FALSE);
+    
+    // Actualiser les TreeViews
+    actualiser_toutes_treeviews(window);
+}
+
+void on_buttonAnnulerAjouterYCH_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "Administrateur_gestion_de_cours");
+    
+    GtkWidget *entryId = lookup_widget(window, "entryIdAjouterYCH");
+    GtkWidget *entryNom = lookup_widget(window, "entryNomCourAjouterYCH");
+    GtkWidget *spinHeure = lookup_widget(window, "spinbuttonHeureAjouteYCH");
+    GtkWidget *spinMin = lookup_widget(window, "spinbuttonDureeAjouterYCH");
+    GtkWidget *comboEquip = lookup_widget(window, "comboboxentryequipementAYCH");
+    
+    if (entryId) gtk_entry_set_text(GTK_ENTRY(entryId), "");
+    if (entryNom) gtk_entry_set_text(GTK_ENTRY(entryNom), "");
+    
+    if (comboEquip && GTK_IS_COMBO_BOX(comboEquip)) {
+        GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(comboEquip)));
+        if (entry) gtk_entry_set_text(entry, "");
+    }
+    
+    if (spinHeure) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinHeure), 10);
+    if (spinMin) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinMin), 0);
+    
+    for (int i = 0; i < 5; i++) jours_selectionnes[i] = 0;
+    
+    GtkWidget *checkL = lookup_widget(window, "checkbuttonLundiAjouterYCH");
+    GtkWidget *checkMa = lookup_widget(window, "checkbuttonMardiAjouterYCH");
+    GtkWidget *checkMe = lookup_widget(window, "checkbuttonMercrediAjouterYCH");
+    GtkWidget *checkJ = lookup_widget(window, "checkbuttonJeudiAjouterYCH");
+    GtkWidget *checkV = lookup_widget(window, "checkbuttonVendrediAjouterYCH");
+    
+    if (checkL) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkL), FALSE);
+    if (checkMa) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkMa), FALSE);
+    if (checkMe) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkMe), FALSE);
+    if (checkJ) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkJ), FALSE);
+    if (checkV) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkV), FALSE);
+}
+
+// ==================== FONCTIONNALITÉ 2: MODIFIER ====================
+
+void on_button2_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "Administrateur_gestion_de_cours");
+    
+    GtkWidget *entryId = lookup_widget(window, "entry2");
+    const gchar *id = gtk_entry_get_text(GTK_ENTRY(entryId));
+    
+    if (strlen(id) == 0) {
+        afficher_message(GTK_WINDOW(window), "error", "ID du cours est obligatoire!");
+        return;
+    }
+    
+    if (!cours_existe((char*)id)) {
+        afficher_message(GTK_WINDOW(window), "error", "Cours non trouvé!");
+        return;
+    }
+    
+    // Récupérer les nouvelles valeurs
+    GtkWidget *entryNom = lookup_widget(window, "entryNomDeCourModifactionYCH");
+    GtkWidget *spinHeure = lookup_widget(window, "spinbuttonheurModifactionYCH");
+    GtkWidget *spinMin = lookup_widget(window, "spinbuttonMinModifactionYCH");
+    GtkWidget *comboType = lookup_widget(window, "comboboxentry4TypeModifactionYCH");
+    GtkWidget *comboNiveau = lookup_widget(window, "comboboxentryNiveauModifactionYCH");
+    GtkWidget *comboCoach = lookup_widget(window, "comboboxentryndcModifactionYCH");
+    GtkWidget *comboEquip = lookup_widget(window, "comboboxentryEquipementMYCH");
+    
+    GtkWidget *checkL = lookup_widget(window, "checkbuttonLModifactionYCH");
+    GtkWidget *checkMa = lookup_widget(window, "checkbuttonMModifactionYCH");
+    GtkWidget *checkMe = lookup_widget(window, "checkbuttonMEModifactionYCH");
+    GtkWidget *checkJ = lookup_widget(window, "checkbuttonJModifactionYCH");
+    GtkWidget *checkV = lookup_widget(window, "checkbuttonVModifactionYCH");
+    
+    GtkWidget *radioAM = lookup_widget(window, "radiobuttonamModifactionYCH");
+    char periode[3];
+    if (radioAM && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radioAM))) {
+        strcpy(periode, "AM");
+    } else {
+        strcpy(periode, "PM");
+    }
+    
+    // Construire l'objet Cours modifié
+    Cours c_modifie;
+    strcpy(c_modifie.id, id);
+    strcpy(c_modifie.nom, gtk_entry_get_text(GTK_ENTRY(entryNom)));
+    
+    const gchar *type = gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboType));
+    const gchar *niveau = gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboNiveau));
+    const gchar *coach = gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboCoach));
+    
+    if (type) strcpy(c_modifie.type, type);
+    else strcpy(c_modifie.type, "");
+    
+    if (niveau) strcpy(c_modifie.niveau, niveau);
+    else strcpy(c_modifie.niveau, "");
+    
+    if (coach) strcpy(c_modifie.coach, coach);
+    else strcpy(c_modifie.coach, "");
+    
+    if (comboEquip && GTK_IS_COMBO_BOX(comboEquip)) {
+        GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(comboEquip)));
+        if (entry) {
+            const gchar *equip = gtk_entry_get_text(entry);
+            if (equip) strcpy(c_modifie.equipement, equip);
+            else strcpy(c_modifie.equipement, "");
+        } else {
+            strcpy(c_modifie.equipement, "");
+        }
+    } else {
+        strcpy(c_modifie.equipement, "");
+    }
+    
+    c_modifie.heure = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinHeure));
+    c_modifie.minute = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinMin));
+    strcpy(c_modifie.periode, periode);
+    
+    // Construire les jours
+    char jours_str[100] = "";
+    if (checkL && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkL))) strcat(jours_str, "Lundi,");
+    if (checkMa && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkMa))) strcat(jours_str, "Mardi,");
+    if (checkMe && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkMe))) strcat(jours_str, "Mercredi,");
+    if (checkJ && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkJ))) strcat(jours_str, "Jeudi,");
+    if (checkV && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkV))) strcat(jours_str, "Vendredi,");
+    
+    if (strlen(jours_str) > 0) {
+        jours_str[strlen(jours_str)-1] = '\0';
+    }
+    strcpy(c_modifie.jours, jours_str);
+    
+    // Validation
+    if (strlen(c_modifie.nom) == 0) {
+        afficher_message(GTK_WINDOW(window), "error", "Le nom du cours est obligatoire!");
+        return;
+    }
+    
+    if (strlen(c_modifie.jours) == 0) {
+        afficher_message(GTK_WINDOW(window), "error", "Sélectionnez au moins un jour!");
+        return;
+    }
+    
+    // Appliquer la modification
+    modifier_cours(c_modifie);
+    
+    afficher_message(GTK_WINDOW(window), "info", "Cours modifié avec succès!");
+    
+    // Actualiser les TreeViews
+    actualiser_toutes_treeviews(window);
+}
+
+void on_toolbutton13ych_recharger_clicked(GtkToolButton *toolbutton, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(toolbutton), "Administrateur_gestion_de_cours");
+    
+    GtkWidget *entryId = lookup_widget(window, "entry2");
+    const gchar *id = gtk_entry_get_text(GTK_ENTRY(entryId));
+    
+    if (strlen(id) == 0) {
+        afficher_message(GTK_WINDOW(window), "error", "Veuillez saisir un ID!");
+        return;
+    }
+    
+    charger_cours_dans_formulaire((char*)id, window);
+}
+
+// ==================== FONCTIONNALITÉ 3: SUPPRIMER ====================
+
+void on_treeviewSupprimerYCH_row_activated(GtkTreeView *treeview, GtkTreePath *path, 
+                                          GtkTreeViewColumn *column, gpointer user_data) {
+    supprimer_cours_depuis_treeview(treeview, path);
+}
+
+void on_treeviewRECHARCHEYCH_row_activated(GtkTreeView *treeview, GtkTreePath *path, 
+                                          GtkTreeViewColumn *column, gpointer user_data) {
+    supprimer_cours_depuis_treeview(treeview, path);
+}
+
+void on_buttonValideSupprimerYCH_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "Administrateur_gestion_de_cours");
+    
+    GtkWidget *entryId = lookup_widget(window, "entryIdSupprimerYCH");
+    const gchar *id = gtk_entry_get_text(GTK_ENTRY(entryId));
+    
+    if (strlen(id) == 0) {
+        afficher_message(GTK_WINDOW(window), "error", "Veuillez saisir un ID!");
+        return;
+    }
+    
+    if (!cours_existe((char*)id)) {
+        afficher_message(GTK_WINDOW(window), "error", "Cours non trouvé!");
+        return;
+    }
+    
+    GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+                                              GTK_DIALOG_MODAL,
+                                              GTK_MESSAGE_QUESTION,
+                                              GTK_BUTTONS_YES_NO,
+                                              "Voulez-vous vraiment supprimer le cours %s?", id);
+    
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+    
+    if (response == GTK_RESPONSE_YES) {
+        if (supprimer_cours((char*)id)) {
+            afficher_message(GTK_WINDOW(window), "info", "Cours supprimé avec succès!");
+            gtk_entry_set_text(GTK_ENTRY(entryId), "");
+            actualiser_toutes_treeviews(window);
+        } else {
+            afficher_message(GTK_WINDOW(window), "error", "Erreur lors de la suppression!");
+        }
+    }
+}
+
+void on_buttonAnnulerSupprimerYCH_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "Administrateur_gestion_de_cours");
+    GtkWidget *entryId = lookup_widget(window, "entryIdSupprimerYCH");
+    gtk_entry_set_text(GTK_ENTRY(entryId), "");
+}
+
+// ==================== FONCTIONNALITÉ 4: RECHERCHE ====================
+
+void on_toolbutton12_clicked(GtkToolButton *toolbutton, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(toolbutton), "Administrateur_gestion_de_cours");
+    
+    GtkWidget *entryId = lookup_widget(window, "entryIdSupprimerYCH");
+    const gchar *id = gtk_entry_get_text(GTK_ENTRY(entryId));
+    
+    GtkWidget *treeview = lookup_widget(window, "treeviewSupprimerYCH");
+    if (treeview != NULL) {
+        rechercher_et_afficher(treeview, (char*)id);
+        
+        if (strlen(id) > 0 && !cours_existe((char*)id)) {
+            afficher_message(GTK_WINDOW(window), "warning", "Aucun cours trouvé avec cet ID!");
+        }
+    }
+}
+
+void on_toolbutton14_clicked(GtkToolButton *toolbutton, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(toolbutton), "Administrateur_gestion_de_cours");
+    
+    GtkWidget *entryId = lookup_widget(window, "entryRechargerYCH");
+    const gchar *id = gtk_entry_get_text(GTK_ENTRY(entryId));
+    
+    GtkWidget *treeview = lookup_widget(window, "treeviewRECHARCHEYCH");
+    if (treeview != NULL) {
+        rechercher_et_afficher(treeview, (char*)id);
+        
+        if (strlen(id) > 0 && !cours_existe((char*)id)) {
+            afficher_message(GTK_WINDOW(window), "warning", "Aucun cours trouvé avec cet ID!");
+        }
+    }
+}
+
+void on_buttonValideRcharcherYCH_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "Administrateur_gestion_de_cours");
+    
+    GtkWidget *entryId = lookup_widget(window, "entryRechargerYCH");
+    const gchar *id = gtk_entry_get_text(GTK_ENTRY(entryId));
+    
+    GtkWidget *treeview = lookup_widget(window, "treeviewRECHARCHEYCH");
+    if (treeview != NULL) {
+        rechercher_et_afficher(treeview, (char*)id);
+        
+        if (strlen(id) > 0 && !cours_existe((char*)id)) {
+            afficher_message(GTK_WINDOW(window), "warning", "Aucun cours trouvé avec cet ID!");
+        }
+    }
+}
+
+void on_button3_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "Administrateur_gestion_de_cours");
+    GtkWidget *entryId = lookup_widget(window, "entryRechargerYCH");
+    gtk_entry_set_text(GTK_ENTRY(entryId), "");
+    
+    GtkWidget *treeview = lookup_widget(window, "treeviewRECHARCHEYCH");
+    if (treeview != NULL) {
+        afficher_cours_treeview(treeview);
+    }
+}
+
+// ==================== FONCTIONNALITÉ 6: INSCRIPTION MEMBRE ====================
+
+void on_buttonSinscrirYCH_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "S_inscrire_menbre____un_cours");
+    
+    GtkWidget *entryIdMembre = lookup_widget(window, "entryIdmenbreInsYCH");
+    GtkWidget *entryIdCours = lookup_widget(window, "entryIdcoursMenbreYCH");
+    
+    const gchar *id_membre = gtk_entry_get_text(GTK_ENTRY(entryIdMembre));
+    const gchar *id_cours = gtk_entry_get_text(GTK_ENTRY(entryIdCours));
+    
+    // Validation
+    if (strlen(id_membre) == 0 || strlen(id_cours) == 0) {
+        afficher_message(GTK_WINDOW(window), "error", "Tous les champs sont obligatoires!");
+        return;
+    }
+    
+    if (!cours_existe((char*)id_cours)) {
+        afficher_message(GTK_WINDOW(window), "error", "Cours non trouvé!");
+        return;
+    }
+    
+    if (est_inscrit((char*)id_membre, (char*)id_cours)) {
+        afficher_message(GTK_WINDOW(window), "warning", "Ce membre est déjà inscrit à ce cours!");
+        return;
+    }
+    
+    // Obtenir la date actuelle
+    time_t t = time(NULL);
+    struct tm *tm_info = localtime(&t);
+    char date_str[20];
+    strftime(date_str, sizeof(date_str), "%Y-%m-%d", tm_info);
+    
+    // Créer l'inscription
+    Inscription ins;
+    strcpy(ins.id_membre, id_membre);
+    strcpy(ins.id_cours, id_cours);
+    strcpy(ins.date, date_str);
+    
+    // Enregistrer l'inscription
+    inscrire_membre(ins);
+    
+    char message[150];
+    // Récupérer le nom du cours pour l'affichage
+    Cours c = rechercher_cours((char*)id_cours);
+    char nom_cours[50];
+    if (strlen(c.id) > 0) {
+        strcpy(nom_cours, c.nom);
+    } else {
+        strcpy(nom_cours, "Cours inconnu");
+    }
+    
+    sprintf(message, "✅ Inscription réussie!\n\n"
+                     "• Membre: %s\n"
+                     "• Cours: %s (%s)\n"
+                     "• Date: %s\n\n"
+                     "L'inscription a été enregistrée.",
+            id_membre, id_cours, nom_cours, date_str);
+    
+    afficher_message(GTK_WINDOW(window), "info", message);
+    
+    // Réinitialiser les champs
+    gtk_entry_set_text(GTK_ENTRY(entryIdMembre), "");
+    gtk_entry_set_text(GTK_ENTRY(entryIdCours), "");
+}
+
+void on_buttonEXITMENBREYCH_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "S_inscrire_menbre____un_cours");
+    gtk_widget_destroy(window);
+}
+
+// ==================== FONCTIONNALITÉ 7: STATISTIQUES ====================
+
+void on_buttonAfficherStats_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(button), "Administrateur_gestion_de_cours");
+    
+    int total_cours, total_inscrits, cours_collectif, cours_individuel;
+    int inscriptions_par_jour[5];
+    float moyenne_inscrits;
+    
+    get_statistiques_detaillees(&total_cours, &total_inscrits, &cours_collectif, 
+                               &cours_individuel, inscriptions_par_jour, &moyenne_inscrits);
+    
+    char message[512];
+    
+    snprintf(message, sizeof(message),
+             "📊 STATISTIQUES DÉTAILLÉES DU CLUB\n\n"
+             "Cours:\n"
+             "• Total: %d\n"
+             "• Collectifs: %d\n"
+             "• Individuels: %d\n\n"
+             "Inscriptions:\n"
+             "• Total: %d\n"
+             "• Moyenne par cours: %.1f\n\n"
+             "Répartition par jour:\n"
+             "• Lundi: %d\n"
+             "• Mardi: %d\n"
+             "• Mercredi: %d\n"
+             "• Jeudi: %d\n"
+             "• Vendredi: %d\n\n"
+             "✅ Système opérationnel!",
+             total_cours, cours_collectif, cours_individuel,
+             total_inscrits, moyenne_inscrits,
+             inscriptions_par_jour[0], inscriptions_par_jour[1],
+             inscriptions_par_jour[2], inscriptions_par_jour[3],
+             inscriptions_par_jour[4]);
+    
+    afficher_message(GTK_WINDOW(window), "info", message);
+}
+
+// ==================== CALLBACKS CASES À COCHER ====================
+
+void on_checkbuttonLundiAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    jours_selectionnes[0] = gtk_toggle_button_get_active(togglebutton);
+}
+
+void on_checkbuttonMardiAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    jours_selectionnes[1] = gtk_toggle_button_get_active(togglebutton);
+}
+
+void on_checkbuttonMercrediAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    jours_selectionnes[2] = gtk_toggle_button_get_active(togglebutton);
+}
+
+void on_checkbuttonJeudiAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    jours_selectionnes[3] = gtk_toggle_button_get_active(togglebutton);
+}
+
+void on_checkbuttonVendrediAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    jours_selectionnes[4] = gtk_toggle_button_get_active(togglebutton);
+}
+
+// ==================== CALLBACKS BOUTONS RADIO ====================
+
+void on_radiobuttonMatinAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(togglebutton), "Administrateur_gestion_de_cours");
+    GtkWidget *radioAM = lookup_widget(window, "radiobuttonMidiAjouterYCH");
+    
+    if (radioAM && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radioAM))) {
+        strcpy(periode_selectionnee, "AM");
+    } else {
+        strcpy(periode_selectionnee, "PM");
+    }
+}
+
+// ==================== CALLBACKS VIDES (obligatoires) ====================
+
+void on_entryIdAjouterYCH_changed(GtkEditable *editable, gpointer user_data) {
+    // Vide mais nécessaire pour les signaux
+}
+
+void on_entryNomCourAjouterYCH_changed(GtkEditable *editable, gpointer user_data) {
+    // Vide mais nécessaire pour les signaux
+}
+
+void on_spinbuttonDureeAjouterYCH_change_value(GtkSpinButton *spinbutton, GtkScrollType scroll, gpointer user_data) {
+    // Vide mais nécessaire pour les signaux
+}
+
+void on_entryIdSupprimerYCH_changed(GtkEditable *editable, gpointer user_data) {
+    // Vide mais nécessaire pour les signaux
+}
+
+// ==================== CALLBACKS TREEVIEW MANQUANTS ====================
+
+void on_treeviewSupprimerYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data) {
+    // Vide mais nécessaire pour les signaux
+}
+
+void on_treeviewRECHARCHEYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data) {
+    // Vide mais nécessaire pour les signaux
+}
+
+// ==================== NOUVEAUX CALLBACKS POUR INSCRIPTION ====================
+
+void on_treeviewinscriptionYCH_row_activated(GtkTreeView *treeview, GtkTreePath *path, 
+                                           GtkTreeViewColumn *column, gpointer user_data) {
+    GtkWidget *window = lookup_widget(GTK_WIDGET(treeview), "S_inscrire_menbre____un_cours");
+    
+    GtkTreeIter iter;
+    GtkTreeModel *model = gtk_tree_view_get_model(treeview);
+    
+    if (model && gtk_tree_model_get_iter(model, &iter, path)) {
+        gchar *id_cours, *nom_cours, *type, *niveau, *jours, *heure, *periode, *coach;
+        gint nb_inscrits;
+        
+        // Récupérer les données du cours (colonnes du TreeView des cours)
+        gtk_tree_model_get(model, &iter, 
+                          0, &id_cours,      // ID du cours
+                          1, &nom_cours,     // Nom du cours
+                          2, &type,          // Type
+                          3, &niveau,        // Niveau
+                          4, &jours,         // Jours
+                          5, &heure,         // Heure
+                          6, &periode,       // Période
+                          7, &coach,         // Coach
+                          8, NULL,           // Équipement (on ignore)
+                          9, &nb_inscrits,   // Nombre d'inscrits
+                          -1);
+        
+        char message[512];
+        sprintf(message, "📋 Détails du cours pour inscription:\n\n"
+                         "• ID: %s\n"
+                         "• Nom: %s\n"
+                         "• Type: %s\n"
+                         "• Niveau: %s\n"
+                         "• Jours: %s\n"
+                         "• Horaire: %s %s\n"
+                         "• Coach: %s\n"
+                         "• Inscrits: %d\n\n"
+                         "Veuillez saisir votre ID dans le champ 'Id_membre'",
+                id_cours, nom_cours, type, niveau, jours, heure, periode, coach, nb_inscrits);
+        
+        afficher_message(GTK_WINDOW(window), "info", message);
+        
+        // Remplir automatiquement l'ID du cours dans le champ
+        GtkWidget *entryIdCours = lookup_widget(window, "entryIdcoursMenbreYCH");
+        if (entryIdCours) {
+            gtk_entry_set_text(GTK_ENTRY(entryIdCours), id_cours);
+        }
+        
+        // Libérer la mémoire
+        g_free(id_cours);
+        g_free(nom_cours);
+        g_free(type);
+        g_free(niveau);
+        g_free(jours);
+        g_free(heure);
+        g_free(periode);
+        g_free(coach);
+    }
+}
+
+void on_treeviewinscriptionYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data) {
+    // Vide mais nécessaire pour les signaux
+}

@@ -259,3 +259,65 @@ void sauvegarder_emploi_entraineur(GtkWidget *treeview, const char *entraineur_i
 void
 on_button51_clicked                    (GtkButton       *button,
                                         gpointer         user_data);
+//gestion du cours
+#ifndef CALLBACKS_H
+#define CALLBACKS_H
+
+#include <gtk/gtk.h>
+
+// Variables globales
+extern int jours_selectionnes[5];
+extern char periode_selectionnee[3];
+
+// Prototypes des fonctions principales
+void on_buttonAjouterAjouterYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonAnnulerAjouterYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonAutoID_clicked(GtkButton *button, gpointer user_data); // NOUVEAU
+void on_button2_clicked(GtkButton *button, gpointer user_data);
+void on_buttonValideSupprimerYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonAnnulerSupprimerYCH_clicked(GtkButton *button, gpointer user_data);
+void on_toolbutton12_clicked(GtkToolButton *toolbutton, gpointer user_data);
+void on_toolbutton13ych_recharger_clicked(GtkToolButton *toolbutton, gpointer user_data);
+void on_toolbutton14_clicked(GtkToolButton *toolbutton, gpointer user_data);
+void on_buttonSinscrirYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonEXITMENBREYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonAfficherStats_clicked(GtkButton *button, gpointer user_data);
+
+// Callbacks pour les cases à cocher
+void on_checkbuttonLundiAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_checkbuttonMardiAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_checkbuttonMercrediAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_checkbuttonJeudiAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_checkbuttonVendrediAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+
+// Callbacks pour les boutons radio
+void on_radiobuttonMatinAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+
+// Callbacks pour les TreeView
+void on_treeviewSupprimerYCH_row_activated(GtkTreeView *treeview, GtkTreePath *path, 
+                                          GtkTreeViewColumn *column, gpointer user_data);
+void on_treeviewRECHARCHEYCH_row_activated(GtkTreeView *treeview, GtkTreePath *path, 
+                                          GtkTreeViewColumn *column, gpointer user_data);
+void on_treeviewSupprimerYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data);
+void on_treeviewRECHARCHEYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data);
+void on_treeviewinscriptionYCH_row_activated(GtkTreeView *treeview, GtkTreePath *path, 
+                                           GtkTreeViewColumn *column, gpointer user_data);
+void on_treeviewinscriptionYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data);
+
+// Callbacks vides (pour compatibilité)
+void on_entryIdAjouterYCH_changed(GtkEditable *editable, gpointer user_data);
+void on_entryNomCourAjouterYCH_changed(GtkEditable *editable, gpointer user_data);
+void on_spinbuttonDureeAjouterYCH_change_value(GtkSpinButton *spinbutton, GtkScrollType scroll, gpointer user_data);
+void on_entryIdSupprimerYCH_changed(GtkEditable *editable, gpointer user_data);
+
+// Recherche
+void on_buttonValideRcharcherYCH_clicked(GtkButton *button, gpointer user_data);
+void on_button3_clicked(GtkButton *button, gpointer user_data);
+
+// Fonctions auxiliaires
+void afficher_message(GtkWindow *parent, const char *type, const char *message);
+void charger_cours_dans_formulaire(char *id_cours, GtkWidget *fenetre);
+void actualiser_toutes_treeviews(GtkWidget *fenetre);
+void supprimer_cours_depuis_treeview(GtkTreeView *treeview, GtkTreePath *path);
+
+#endif
