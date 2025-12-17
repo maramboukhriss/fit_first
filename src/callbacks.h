@@ -1,5 +1,5 @@
 #include <gtk/gtk.h>
-
+#include "fonctions.h"
 extern int sexe_ajout;  // 0 = Femme, 1 = Homme
 
 void on_femme_toggled(GtkToggleButton *togglebutton, gpointer user_data);
@@ -134,4 +134,69 @@ on_radiobutton46_toggled               (GtkToggleButton *togglebutton,
 
 void
 on_radiobutton47_toggled               (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+
+//centre
+
+/* =================== FONCTIONS POUR L'AJOUT =================== */
+void on_radiobuttonmixte_ajout_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_radiomasculin_ajout_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_radiofeminin_ajout_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_buttonajouter_clicked(GtkWidget *button, gpointer user_data);
+void on_buttonannuler_ajout_clicked(GtkWidget *button, gpointer user_data);
+void on_buttonquitter_ajout_clicked(GtkWidget *button, gpointer user_data);
+
+/* =================== FONCTIONS POUR LA MODIFICATION =================== */
+void on_radiomixte_modif_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_radiomasculin_modif_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_radiofeminin_modif_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_buttonrechercher_modif_clicked(GtkWidget *button, gpointer user_data);
+void on_buttonmodifier_clicked(GtkWidget *button, gpointer user_data);
+void on_buttonannuler_modif_clicked(GtkWidget *button, gpointer user_data);
+void on_buttonquitter_modif_clicked(GtkWidget *button, gpointer user_data);
+
+/* =================== FONCTIONS POUR LA SUPPRESSION =================== */
+void on_buttonrechercher_supp_clicked(GtkWidget *button, gpointer user_data);
+void on_buttonsupprimer_clicked(GtkWidget *button, gpointer user_data);
+void on_buttonannuler_supp_clicked(GtkWidget *button, gpointer user_data);
+void on_buttonquitter_supp_clicked(GtkWidget *button, gpointer user_data);
+
+/* =================== FONCTIONS POUR LA RECHERCHE =================== */
+void on_buttonrechercher_clicked(GtkWidget *button, gpointer user_data);
+void on_buttonafficher_clicked(GtkWidget *button, gpointer user_data);
+
+/* =================== FONCTIONS UTILITAIRES =================== */
+void afficher_message(GtkWidget *parent, gchar *message, gchar *type);
+void vider_treeview(GtkWidget *treeview);
+void charger_centre_dans_treeview(GtkWidget *treeview, centre c);
+centre* lireTousCentres(const char *filename, int *count);
+
+
+void afficher_tous_centres_au_demarrage(GtkWidget *treeview);
+void
+on_button_afficher_tous_clicked        (GtkWidget      *button,
+                                        gpointer         user_data);
+
+
+void charger_inscriptions_dans_treeview(GtkWidget *treeview);
+void vider_treeview(GtkWidget *treeview);
+void
+on_buttoninscription_clicked           (GtkWidget      *button,
+                                        gpointer         user_data);
+
+void
+on_buttonvoirinscription_clicked       (GtkWidget       *button,
+                                        gpointer         user_data);
+
+void
+on_buttonretour_clicked                (GtkWidget       *button,
+                                        gpointer         user_data);
+
+void
+on_buttonrefrech_clicked               (GtkWidget       *button,
+                                        gpointer         user_data);
+
+void
+on_centre_clicked                      (GtkWidget       *objet_graphique,
                                         gpointer         user_data);

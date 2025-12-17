@@ -9,3 +9,6 @@ GtkWidget* create_authentification (void);
 GtkWidget* create_acceuiladmin (void);
 GtkWidget* create_acceuilmembre (void);
 GtkWidget* create_acceuilentraineur (void);
+GtkWidget* create_gestioncentres (void);
+GtkWidget* create_window1 (void);
+GtkWidget* create_window2 (void);

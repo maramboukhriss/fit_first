@@ -2482,3 +2482,1247 @@ on_radiobutton47_toggled               (GtkToggleButton *togglebutton,
     }
 }
 
+
+
+
+
+//centre
+/* Variables globales pour les types de centre */
+gchar type_centre_ajout[20] = "MIXTE";
+gchar type_centre_modif[20] = "MIXTE";
+gint id_centre_courant = -1;
+gint id_centre_supp = -1;
+
+/* =================== FONCTIONS UTILITAIRES =================== */
+
+void afficher_message(GtkWidget *parent, gchar *message, gchar *type) {
+    GtkMessageType msg_type;
+    
+    if (strcmp(type, "error") == 0)
+        msg_type = GTK_MESSAGE_ERROR;
+    else if (strcmp(type, "warning") == 0)
+        msg_type = GTK_MESSAGE_WARNING;
+    else
+        msg_type = GTK_MESSAGE_INFO;
+    
+    GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(parent),
+                                               GTK_DIALOG_MODAL,
+                                               msg_type,
+                                               GTK_BUTTONS_OK,
+                                               "%s", message);
+    gtk_window_set_title(GTK_WINDOW(dialog), "Message");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+
+centre* lireTousCentres(const char *filename, int *count) {
+    FILE *f = fopen(filename, "r");
+    if (f == NULL) {
+        *count = 0;
+        return NULL;
+    }
+    
+    int ligne_count = 0;
+    char buffer[1000];
+    while (fgets(buffer, sizeof(buffer), f)) {
+        ligne_count++;
+    }
+    rewind(f);
+    
+    centre *centres = (centre*)malloc(ligne_count * sizeof(centre));
+    if (centres == NULL) {
+        fclose(f);
+        *count = 0;
+        return NULL;
+    }
+    
+    int i = 0;
+    while (fgets(buffer, sizeof(buffer), f) && i < ligne_count) {
+        /* Format: id;nom;adresse;telephone;specialisation;capacite;h_matin;h_midi;h_soir;type;photo */
+        if (sscanf(buffer, "%d;%49[^;];%99[^;];%19[^;];%99[^;];%49[^;];%19[^;];%19[^;];%19[^;];%19[^;];%99[^\n]",
+               &centres[i].id, centres[i].nom, centres[i].adresse, centres[i].telephone,
+               centres[i].specialisation, centres[i].capacite, centres[i].horaires_matin,
+               centres[i].horaires_midi, centres[i].horaires_soir, centres[i].type,
+               centres[i].photo_path) == 11) {
+            i++;
+        }
+    }
+    
+    fclose(f);
+    *count = i;
+    return centres;
+}
+
+/* =================== FONCTIONS POUR L'AJOUT =================== */
+
+void on_radiobuttonmixte_ajout_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(type_centre_ajout, "MIXTE");
+    }
+}
+
+void on_radiomasculin_ajout_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(type_centre_ajout, "MASCULIN");
+    }
+}
+
+void on_radiofeminin_ajout_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(type_centre_ajout, "FEMININ");
+    }
+}
+
+void on_buttonajouter_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer tous les widgets */
+    GtkWidget *entry_id = lookup_widget(window, "entryid1");
+    GtkWidget *entry_nom = lookup_widget(window, "entrynom1");
+    GtkWidget *entry_adresse = lookup_widget(window, "entryadresse1");
+    GtkWidget *entry_telephone = lookup_widget(window, "entrytelephone");
+    GtkWidget *entry_capacite = lookup_widget(window, "entrycapacite");
+    GtkWidget *combobox1 = lookup_widget(window, "combobox1");
+    GtkWidget *spin_matin = lookup_widget(window, "matinajout");
+    GtkWidget *spin_midi = lookup_widget(window, "midiajout");
+    GtkWidget *spin_soir = lookup_widget(window, "soirajout");
+    
+    if (!entry_id || !entry_nom || !entry_adresse || !entry_telephone || 
+        !entry_capacite || !combobox1 || !spin_matin || !spin_midi || !spin_soir) {
+        afficher_message(window, "Erreur interne: Widgets non trouvés!", "error");
+        return;
+    }
+    
+    /* Récupérer les valeurs */
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id));
+    const gchar *nom = gtk_entry_get_text(GTK_ENTRY(entry_nom));
+    const gchar *adresse = gtk_entry_get_text(GTK_ENTRY(entry_adresse));
+    const gchar *telephone = gtk_entry_get_text(GTK_ENTRY(entry_telephone));
+    const gchar *capacite = gtk_entry_get_text(GTK_ENTRY(entry_capacite));
+    
+    /* Récupérer la spécialisation */
+    gchar *specialisation = NULL;
+    if (GTK_IS_COMBO_BOX(combobox1)) {
+        gint active = gtk_combo_box_get_active(GTK_COMBO_BOX(combobox1));
+        if (active >= 0) {
+            specialisation = gtk_combo_box_get_active_text(GTK_COMBO_BOX(combobox1));
+        }
+    }
+    
+    /* Récupérer les horaires */
+    gint h_matin = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_matin));
+    gint h_midi = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_midi));
+    gint h_soir = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_soir));
+    
+    /* Validation */
+    if (strlen(id_text) == 0 || strlen(nom) == 0 || strlen(adresse) == 0) {
+        afficher_message(window, "L'ID, le nom et l'adresse sont obligatoires!", "error");
+        if (specialisation) g_free(specialisation);
+        return;
+    }
+    
+    int id = atoi(id_text);
+    if (id <= 0) {
+        afficher_message(window, "L'ID doit être un nombre positif!", "error");
+        if (specialisation) g_free(specialisation);
+        return;
+    }
+    
+    /* Vérifier si l'ID existe déjà */
+    centre existant = chercherCentre("centres.txt", id);
+    if (existant.id != -1) {
+        afficher_message(window, "Cet ID existe déjà! Veuillez utiliser un autre ID.", "error");
+        if (specialisation) g_free(specialisation);
+        return;
+    }
+    
+    /* Créer la structure centre */
+    centre nouveau_centre;
+    nouveau_centre.id = id;
+    strncpy(nouveau_centre.nom, nom, sizeof(nouveau_centre.nom) - 1);
+    nouveau_centre.nom[sizeof(nouveau_centre.nom) - 1] = '\0';
+    
+    strncpy(nouveau_centre.adresse, adresse, sizeof(nouveau_centre.adresse) - 1);
+    nouveau_centre.adresse[sizeof(nouveau_centre.adresse) - 1] = '\0';
+    
+    strncpy(nouveau_centre.telephone, telephone, sizeof(nouveau_centre.telephone) - 1);
+    nouveau_centre.telephone[sizeof(nouveau_centre.telephone) - 1] = '\0';
+    
+    if (specialisation) {
+        strncpy(nouveau_centre.specialisation, specialisation, sizeof(nouveau_centre.specialisation) - 1);
+        g_free(specialisation);
+    } else {
+        strcpy(nouveau_centre.specialisation, "");
+    }
+    
+    strncpy(nouveau_centre.capacite, capacite, sizeof(nouveau_centre.capacite) - 1);
+    nouveau_centre.capacite[sizeof(nouveau_centre.capacite) - 1] = '\0';
+    
+    snprintf(nouveau_centre.horaires_matin, sizeof(nouveau_centre.horaires_matin), "%d", h_matin);
+    snprintf(nouveau_centre.horaires_midi, sizeof(nouveau_centre.horaires_midi), "%d", h_midi);
+    snprintf(nouveau_centre.horaires_soir, sizeof(nouveau_centre.horaires_soir), "%d", h_soir);
+    
+    strncpy(nouveau_centre.type, type_centre_ajout, sizeof(nouveau_centre.type) - 1);
+    nouveau_centre.type[sizeof(nouveau_centre.type) - 1] = '\0';
+    
+    strcpy(nouveau_centre.photo_path, "aucune");
+    
+    /* Ajouter au fichier */
+    int resultat = ajouterCentre("centres.txt", nouveau_centre);
+    
+    if (resultat == 1) {
+        afficher_message(window, "Centre ajouté avec succès!", "info");
+        on_buttonannuler_ajout_clicked(button, user_data);
+    } else {
+        afficher_message(window, "Erreur lors de l'ajout du centre!", "error");
+    }
+}
+
+void on_buttonannuler_ajout_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    GtkWidget *entry_id = lookup_widget(window, "entryid1");
+    GtkWidget *entry_nom = lookup_widget(window, "entrynom1");
+    GtkWidget *entry_adresse = lookup_widget(window, "entryadresse1");
+    GtkWidget *entry_telephone = lookup_widget(window, "entrytelephone");
+    GtkWidget *entry_capacite = lookup_widget(window, "entrycapacite");
+    GtkWidget *combobox1 = lookup_widget(window, "combobox1");
+    GtkWidget *spin_matin = lookup_widget(window, "matinajout");
+    GtkWidget *spin_midi = lookup_widget(window, "midiajout");
+    GtkWidget *spin_soir = lookup_widget(window, "soirajout");
+    GtkWidget *radio_mixte = lookup_widget(window, "radiobuttonmixte_ajout");
+    
+    /* Vider les champs */
+    if (entry_id) gtk_entry_set_text(GTK_ENTRY(entry_id), "");
+    if (entry_nom) gtk_entry_set_text(GTK_ENTRY(entry_nom), "");
+    if (entry_adresse) gtk_entry_set_text(GTK_ENTRY(entry_adresse), "");
+    if (entry_telephone) gtk_entry_set_text(GTK_ENTRY(entry_telephone), "");
+    if (entry_capacite) gtk_entry_set_text(GTK_ENTRY(entry_capacite), "");
+    
+    /* Réinitialiser la combobox */
+    if (combobox1 && GTK_IS_COMBO_BOX(combobox1)) {
+        gtk_combo_box_set_active(GTK_COMBO_BOX(combobox1), 0);
+    }
+    
+    /* Réinitialiser les spin buttons */
+    if (spin_matin && GTK_IS_SPIN_BUTTON(spin_matin)) {
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_matin), 8);
+    }
+    if (spin_midi && GTK_IS_SPIN_BUTTON(spin_midi)) {
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_midi), 12);
+    }
+    if (spin_soir && GTK_IS_SPIN_BUTTON(spin_soir)) {
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_soir), 16);
+    }
+    
+    /* Réinitialiser les boutons radio */
+    if (radio_mixte && GTK_IS_TOGGLE_BUTTON(radio_mixte)) {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_mixte), TRUE);
+    }
+    
+    strcpy(type_centre_ajout, "MIXTE");
+}
+
+void on_buttonquitter_ajout_clicked(GtkWidget *button, gpointer user_data) {
+    gtk_main_quit();
+}
+
+/* =================== FONCTIONS POUR LA MODIFICATION =================== */
+
+void on_radiomixte_modif_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(type_centre_modif, "MIXTE");
+    }
+}
+
+void on_radiomasculin_modif_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(type_centre_modif, "MASCULIN");
+    }
+}
+
+void on_radiofeminin_modif_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(type_centre_modif, "FEMININ");
+    }
+}
+
+void on_buttonrechercher_modif_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer le widget d'entrée de l'ID */
+    GtkWidget *entry_id_recherche = lookup_widget(window, "entry_id_modif");
+    
+    if (!entry_id_recherche) {
+        afficher_message(window, "Erreur: Champ ID non trouvé!", "error");
+        return;
+    }
+    
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id_recherche));
+    
+    if (strlen(id_text) == 0) {
+        afficher_message(window, "Veuillez entrer un ID à modifier!", "error");
+        return;
+    }
+    
+    int id = atoi(id_text);
+    centre c = chercherCentre("centres.txt", id);
+    
+    if (c.id == -1) {
+        afficher_message(window, "Centre non trouvé!", "error");
+        return;
+    }
+    
+    /* Récupérer les autres widgets pour afficher les informations */
+    GtkWidget *entry_nom = lookup_widget(window, "entry_nom_modif");
+    GtkWidget *entry_adresse = lookup_widget(window, "entry_adresse_modif");
+    GtkWidget *entry_telephone = lookup_widget(window, "entry_telephone_modif");
+    GtkWidget *entry_capacite = lookup_widget(window, "entry_capacite_modif");
+    GtkWidget *entry_specialisation = lookup_widget(window, "entry_specialisation_modif");
+    GtkWidget *spin_matin = lookup_widget(window, "entry_hmatin_modif");
+    GtkWidget *spin_midi = lookup_widget(window, "entry_hmidi_modif");
+    GtkWidget *spin_soir = lookup_widget(window, "entry_hsoir_modif");
+    GtkWidget *radio_mixte = lookup_widget(window, "radiomixte_modif");
+    GtkWidget *radio_masculin = lookup_widget(window, "radiomasculin_modif");
+    GtkWidget *radio_feminin = lookup_widget(window, "radiofeminin_modif");
+    
+    /* Afficher les informations dans les champs */
+    if (entry_nom) gtk_entry_set_text(GTK_ENTRY(entry_nom), c.nom);
+    if (entry_adresse) gtk_entry_set_text(GTK_ENTRY(entry_adresse), c.adresse);
+    if (entry_telephone) gtk_entry_set_text(GTK_ENTRY(entry_telephone), c.telephone);
+    if (entry_capacite) gtk_entry_set_text(GTK_ENTRY(entry_capacite), c.capacite);
+    
+    /* Définir la spécialisation dans la combobox */
+    if (entry_specialisation && GTK_IS_COMBO_BOX(entry_specialisation)) {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(entry_specialisation));
+        GtkTreeIter iter;
+        gboolean found = FALSE;
+        
+        if (gtk_tree_model_get_iter_first(model, &iter)) {
+            do {
+                gchar *text;
+                gtk_tree_model_get(model, &iter, 0, &text, -1);
+                if (text && strcmp(text, c.specialisation) == 0) {
+                    gtk_combo_box_set_active_iter(GTK_COMBO_BOX(entry_specialisation), &iter);
+                    found = TRUE;
+                }
+                g_free(text);
+                if (found) break;
+            } while (gtk_tree_model_iter_next(model, &iter));
+        }
+        if (!found) {
+            gtk_combo_box_set_active(GTK_COMBO_BOX(entry_specialisation), 0);
+        }
+    }
+    
+    /* Définir les horaires */
+    if (spin_matin) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_matin), atof(c.horaires_matin));
+    if (spin_midi) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_midi), atof(c.horaires_midi));
+    if (spin_soir) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_soir), atof(c.horaires_soir));
+    
+    /* Définir le type de centre */
+    if (strcmp(c.type, "MIXTE") == 0 && radio_mixte) {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_mixte), TRUE);
+    } else if (strcmp(c.type, "MASCULIN") == 0 && radio_masculin) {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_masculin), TRUE);
+    } else if (strcmp(c.type, "FEMININ") == 0 && radio_feminin) {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_feminin), TRUE);
+    }
+    
+    strcpy(type_centre_modif, c.type);
+    id_centre_courant = c.id;
+    
+    afficher_message(window, "Centre trouvé! Modifiez les champs et cliquez sur Modifier.", "info");
+}
+
+void on_buttonmodifier_clicked(GtkWidget *button, gpointer user_data) {
+    if (id_centre_courant == -1) {
+        GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+        afficher_message(window, "Veuillez d'abord chercher un centre à modifier!", "error");
+        return;
+    }
+    
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer les nouveaux valeurs */
+    GtkWidget *entry_nom = lookup_widget(window, "entry_nom_modif");
+    GtkWidget *entry_adresse = lookup_widget(window, "entry_adresse_modif");
+    GtkWidget *entry_telephone = lookup_widget(window, "entry_telephone_modif");
+    GtkWidget *entry_capacite = lookup_widget(window, "entry_capacite_modif");
+    GtkWidget *entry_specialisation = lookup_widget(window, "entry_specialisation_modif");
+    GtkWidget *spin_matin = lookup_widget(window, "entry_hmatin_modif");
+    GtkWidget *spin_midi = lookup_widget(window, "entry_hmidi_modif");
+    GtkWidget *spin_soir = lookup_widget(window, "entry_hsoir_modif");
+    
+    if (!entry_nom || !entry_adresse || !entry_telephone || !entry_capacite) {
+        afficher_message(window, "Erreur interne: Widgets non trouvés!", "error");
+        return;
+    }
+    
+    const gchar *nom = gtk_entry_get_text(GTK_ENTRY(entry_nom));
+    const gchar *adresse = gtk_entry_get_text(GTK_ENTRY(entry_adresse));
+    const gchar *telephone = gtk_entry_get_text(GTK_ENTRY(entry_telephone));
+    const gchar *capacite = gtk_entry_get_text(GTK_ENTRY(entry_capacite));
+    
+    /* Récupérer la spécialisation */
+    gchar *specialisation = NULL;
+    if (entry_specialisation && GTK_IS_COMBO_BOX(entry_specialisation)) {
+        gint active = gtk_combo_box_get_active(GTK_COMBO_BOX(entry_specialisation));
+        if (active >= 0) {
+            specialisation = gtk_combo_box_get_active_text(GTK_COMBO_BOX(entry_specialisation));
+        }
+    }
+    
+    /* Récupérer les horaires */
+    gdouble h_matin = 8.0, h_midi = 12.0, h_soir = 16.0;
+    if (spin_matin) h_matin = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_matin));
+    if (spin_midi) h_midi = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_midi));
+    if (spin_soir) h_soir = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_soir));
+    
+    /* Validation */
+    if (strlen(nom) == 0 || strlen(adresse) == 0) {
+        afficher_message(window, "Le nom et l'adresse sont obligatoires!", "error");
+        if (specialisation) g_free(specialisation);
+        return;
+    }
+    
+    /* Créer la structure centre modifiée */
+    centre centre_modifie;
+    centre_modifie.id = id_centre_courant;
+    
+    strncpy(centre_modifie.nom, nom, sizeof(centre_modifie.nom) - 1);
+    centre_modifie.nom[sizeof(centre_modifie.nom) - 1] = '\0';
+    
+    strncpy(centre_modifie.adresse, adresse, sizeof(centre_modifie.adresse) - 1);
+    centre_modifie.adresse[sizeof(centre_modifie.adresse) - 1] = '\0';
+    
+    strncpy(centre_modifie.telephone, telephone, sizeof(centre_modifie.telephone) - 1);
+    centre_modifie.telephone[sizeof(centre_modifie.telephone) - 1] = '\0';
+    
+    if (specialisation) {
+        strncpy(centre_modifie.specialisation, specialisation, sizeof(centre_modifie.specialisation) - 1);
+        g_free(specialisation);
+    } else {
+        strcpy(centre_modifie.specialisation, "");
+    }
+    
+    strncpy(centre_modifie.capacite, capacite, sizeof(centre_modifie.capacite) - 1);
+    centre_modifie.capacite[sizeof(centre_modifie.capacite) - 1] = '\0';
+    
+    snprintf(centre_modifie.horaires_matin, sizeof(centre_modifie.horaires_matin), "%.0f", h_matin);
+    snprintf(centre_modifie.horaires_midi, sizeof(centre_modifie.horaires_midi), "%.0f", h_midi);
+    snprintf(centre_modifie.horaires_soir, sizeof(centre_modifie.horaires_soir), "%.0f", h_soir);
+    
+    strncpy(centre_modifie.type, type_centre_modif, sizeof(centre_modifie.type) - 1);
+    centre_modifie.type[sizeof(centre_modifie.type) - 1] = '\0';
+    
+    strcpy(centre_modifie.photo_path, "aucune");
+    
+    /* Modifier le centre */
+    int resultat = modifierCentre("centres.txt", id_centre_courant, centre_modifie);
+    
+    if (resultat == 1) {
+        afficher_message(window, "Centre modifié avec succès!", "info");
+        id_centre_courant = -1;
+        on_buttonannuler_modif_clicked(button, user_data);
+    } else {
+        afficher_message(window, "Erreur lors de la modification du centre!", "error");
+    }
+}
+
+void on_buttonannuler_modif_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    GtkWidget *entry_id_recherche = lookup_widget(window, "entry_id_modif");
+    GtkWidget *entry_nom = lookup_widget(window, "entry_nom_modif");
+    GtkWidget *entry_adresse = lookup_widget(window, "entry_adresse_modif");
+    GtkWidget *entry_telephone = lookup_widget(window, "entry_telephone_modif");
+    GtkWidget *entry_capacite = lookup_widget(window, "entry_capacite_modif");
+    GtkWidget *entry_specialisation = lookup_widget(window, "entry_specialisation_modif");
+    GtkWidget *spin_matin = lookup_widget(window, "entry_hmatin_modif");
+    GtkWidget *spin_midi = lookup_widget(window, "entry_hmidi_modif");
+    GtkWidget *spin_soir = lookup_widget(window, "entry_hsoir_modif");
+    GtkWidget *radio_mixte = lookup_widget(window, "radiomixte_modif");
+    
+    /* Vider les champs */
+    if (entry_id_recherche) gtk_entry_set_text(GTK_ENTRY(entry_id_recherche), "");
+    if (entry_nom) gtk_entry_set_text(GTK_ENTRY(entry_nom), "");
+    if (entry_adresse) gtk_entry_set_text(GTK_ENTRY(entry_adresse), "");
+    if (entry_telephone) gtk_entry_set_text(GTK_ENTRY(entry_telephone), "");
+    if (entry_capacite) gtk_entry_set_text(GTK_ENTRY(entry_capacite), "");
+    
+    /* Réinitialiser la combobox */
+    if (entry_specialisation && GTK_IS_COMBO_BOX(entry_specialisation)) {
+        gtk_combo_box_set_active(GTK_COMBO_BOX(entry_specialisation), 0);
+    }
+    
+    /* Réinitialiser les spin buttons */
+    if (spin_matin) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_matin), 8);
+    if (spin_midi) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_midi), 12);
+    if (spin_soir) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_soir), 16);
+    
+    /* Réinitialiser les boutons radio */
+    if (radio_mixte) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_mixte), TRUE);
+    
+    id_centre_courant = -1;
+    strcpy(type_centre_modif, "MIXTE");
+}
+
+void on_buttonquitter_modif_clicked(GtkWidget *button, gpointer user_data) {
+    gtk_main_quit();
+}
+
+/* =================== FONCTIONS POUR LA SUPPRESSION =================== */
+
+void on_buttonrechercher_supp_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    GtkWidget *entry_id_recherche = lookup_widget(window, "entry_id_rech_supp");
+    if (!entry_id_recherche) {
+        afficher_message(window, "Erreur: Champ ID non trouvé!", "error");
+        return;
+    }
+    
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id_recherche));
+    if (strlen(id_text) == 0) {
+        afficher_message(window, "Veuillez entrer un ID à supprimer!", "error");
+        return;
+    }
+    
+    int id = atoi(id_text);
+    centre c = chercherCentre("centres.txt", id);
+    
+    if (c.id == -1) {
+        afficher_message(window, "Centre non trouvé!", "error");
+        return;
+    }
+    
+    /* Afficher les informations du centre en utilisant g_strdup_printf pour éviter le warning */
+    gchar *message = g_strdup_printf(
+             "Centre trouvé:\n\n"
+             "ID: %d\n"
+             "Nom: %s\n"
+             "Adresse: %s\n"
+             "Téléphone: %s\n"
+             "Spécialisation: %s\n"
+             "Capacité: %s\n"
+             "Horaires: %s-%s-%s\n"
+             "Type: %s\n\n"
+             "Êtes-vous sûr de vouloir supprimer ce centre?",
+             c.id, c.nom, c.adresse, c.telephone, c.specialisation,
+             c.capacite, c.horaires_matin, c.horaires_midi, c.horaires_soir,
+             c.type);
+    
+    GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+        GTK_DIALOG_MODAL,
+        GTK_MESSAGE_QUESTION,
+        GTK_BUTTONS_YES_NO,
+        "%s", message);
+    gtk_window_set_title(GTK_WINDOW(dialog), "Confirmer la suppression");
+    g_free(message);
+    
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+    
+    if (response == GTK_RESPONSE_YES) {
+        id_centre_supp = c.id;
+        afficher_message(window, "Centre prêt à être supprimé. Cliquez sur SUPPRIMER.", "info");
+    } else {
+        id_centre_supp = -1;
+    }
+}
+
+void on_buttonsupprimer_clicked(GtkWidget *button, gpointer user_data) {
+    if (id_centre_supp == -1) {
+        GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+        afficher_message(window, "Veuillez d'abord chercher un centre à supprimer!", "error");
+        return;
+    }
+    
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Confirmation finale */
+    GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+        GTK_DIALOG_MODAL,
+        GTK_MESSAGE_WARNING,
+        GTK_BUTTONS_YES_NO,
+        "Êtes-vous ABSOLUMENT sûr de vouloir supprimer ce centre? Cette action est irréversible!");
+    gtk_window_set_title(GTK_WINDOW(dialog), "Confirmation finale");
+    
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+    
+    if (response == GTK_RESPONSE_YES) {
+        /* Supprimer le centre */
+        int resultat = supprimerCentre("centres.txt", id_centre_supp);
+        
+        if (resultat == 1) {
+            afficher_message(window, "Centre supprimé avec succès!", "info");
+            
+            /* Vider le champ ID */
+            GtkWidget *entry_id_recherche = lookup_widget(window, "entry_id_rech_supp");
+            if (entry_id_recherche) {
+                gtk_entry_set_text(GTK_ENTRY(entry_id_recherche), "");
+            }
+        } else {
+            afficher_message(window, "Erreur lors de la suppression du centre!", "error");
+        }
+    }
+    
+    id_centre_supp = -1;
+}
+
+void on_buttonannuler_supp_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    GtkWidget *entry_id_recherche = lookup_widget(window, "entry_id_rech_supp");
+    if (entry_id_recherche) {
+        gtk_entry_set_text(GTK_ENTRY(entry_id_recherche), "");
+    }
+    
+    id_centre_supp = -1;
+}
+
+void on_buttonquitter_supp_clicked(GtkWidget *button, gpointer user_data) {
+    gtk_main_quit();
+}
+
+/* =================== FONCTIONS POUR LA RECHERCHE =================== */
+
+void charger_centre_dans_treeview(GtkWidget *treeview, centre c) {
+    GtkTreeIter iter;
+    GtkListStore *store;
+    
+    /* Créer ou récupérer le store */
+    if (gtk_tree_view_get_model(GTK_TREE_VIEW(treeview)) == NULL) {
+        /* Créer les colonnes */
+        GtkCellRenderer *renderer;
+        GtkTreeViewColumn *column;
+        
+        /* Créer le store avec les colonnes */
+        store = gtk_list_store_new(10, 
+            G_TYPE_INT,    // ID
+            G_TYPE_STRING, // Nom
+            G_TYPE_STRING, // Adresse
+            G_TYPE_STRING, // Téléphone
+            G_TYPE_STRING, // Spécialisation
+            G_TYPE_STRING, // Capacité
+            G_TYPE_STRING, // Horaire matin
+            G_TYPE_STRING, // Horaire midi
+            G_TYPE_STRING, // Horaire soir
+            G_TYPE_STRING  // Type
+        );
+        
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        /* Ajouter les colonnes */
+        gchar *titres[] = {"ID", "Nom", "Adresse", "Téléphone", "Spécialisation", 
+                          "Capacité", "Matin", "Midi", "Soir", "Type"};
+        
+        for (int i = 0; i < 10; i++) {
+            renderer = gtk_cell_renderer_text_new();
+            column = gtk_tree_view_column_new_with_attributes(titres[i], renderer, 
+                                                             "text", i, NULL);
+            gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        }
+    } else {
+        store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(treeview)));
+    }
+    
+    /* Ajouter les données */
+    gtk_list_store_append(store, &iter);
+    gtk_list_store_set(store, &iter,
+        0, c.id,
+        1, c.nom,
+        2, c.adresse,
+        3, c.telephone,
+        4, c.specialisation,
+        5, c.capacite,
+        6, c.horaires_matin,
+        7, c.horaires_midi,
+        8, c.horaires_soir,
+        9, c.type,
+        -1);
+}
+
+void vider_treeview(GtkWidget *treeview) {
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    if (model != NULL) {
+        GtkListStore *store = GTK_LIST_STORE(model);
+        gtk_list_store_clear(store);
+    }
+}
+
+void on_buttonrechercher_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    GtkWidget *entry_id_recherche = lookup_widget(window, "entry_id_rech_aff");
+    GtkWidget *treeview = lookup_widget(window, "treeview_afficher_centre");
+    
+    if (!entry_id_recherche || !treeview) {
+        afficher_message(window, "Widgets non trouvés!", "error");
+        return;
+    }
+    
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id_recherche));
+    
+    /* Vider le treeview */
+    vider_treeview(treeview);
+    
+    if (strlen(id_text) == 0) {
+        /* Afficher tous les centres */
+        centre *centres;
+        int count = 0;
+        
+        centres = lireTousCentres("centres.txt", &count);
+        
+        if (count == 0) {
+            afficher_message(window, "Aucun centre trouvé dans la base de données!", "info");
+        } else {
+            for (int i = 0; i < count; i++) {
+                charger_centre_dans_treeview(treeview, centres[i]);
+            }
+            gchar message[200];  /* Augmenté de 100 à 200 */
+            snprintf(message, sizeof(message), "%d centre(s) trouvé(s).", count);
+            afficher_message(window, message, "info");
+            free(centres);
+        }
+    } else {
+        /* Rechercher par ID */
+        int id = atoi(id_text);
+        centre c = chercherCentre("centres.txt", id);
+        
+        if (c.id == -1) {
+            afficher_message(window, "Centre non trouvé!", "error");
+        } else {
+            charger_centre_dans_treeview(treeview, c);
+            afficher_message(window, "Centre trouvé!", "info");
+        }
+    }
+}
+
+
+
+/* =================== FONCTION POUR SUPPRIMER PAR DOUBLE-CLIC =================== */
+
+/* Fonction pour supprimer un centre par double-clic */
+void on_treeview_double_click(GtkWidget *treeview, GtkTreePath *path, 
+                             GtkTreeViewColumn *column, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(treeview);
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    GtkTreeIter iter;
+    
+    /* Récupérer l'itérateur de la ligne double-cliquée */
+    if (gtk_tree_model_get_iter(model, &iter, path)) {
+        gint id_centre;
+        
+        /* Récupérer l'ID du centre depuis la première colonne */
+        gtk_tree_model_get(model, &iter, 0, &id_centre, -1);
+        
+        /* Vérifier si le centre existe */
+        centre c = chercherCentre("centres.txt", id_centre);
+        
+        if (c.id == -1) {
+            afficher_message(window, "Centre non trouvé!", "error");
+            return;
+        }
+        
+        /* Afficher une boîte de dialogue de confirmation */
+        gchar *message = g_strdup_printf(
+            "Voulez-vous vraiment supprimer ce centre?\n\n"
+            "ID: %d\n"
+            "Nom: %s\n"
+            "Adresse: %s\n"
+            "Type: %s",
+            c.id, c.nom, c.adresse, c.type);
+        
+        GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+            GTK_DIALOG_MODAL,
+            GTK_MESSAGE_QUESTION,
+            GTK_BUTTONS_YES_NO,
+            "%s", message);
+        gtk_window_set_title(GTK_WINDOW(dialog), "Confirmer la suppression");
+        g_free(message);
+        
+        gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        
+        if (response == GTK_RESPONSE_YES) {
+            /* Supprimer le centre */
+            int resultat = supprimerCentre("centres.txt", id_centre);
+            
+            if (resultat == 1) {
+                afficher_message(window, "Centre supprimé avec succès!", "info");
+                
+                /* Supprimer la ligne du treeview */
+                GtkListStore *store = GTK_LIST_STORE(model);
+                gtk_list_store_remove(store, &iter);
+                
+                /* Si on est dans l'onglet "Afficher tous", recharger les données */
+                GtkWidget *treeview_afficher = lookup_widget(window, "treeview_afficher_centre");
+                if (treeview == treeview_afficher) {
+                    /* Recharger tous les centres */
+                    vider_treeview(treeview);
+                    centre *centres;
+                    int count = 0;
+                    centres = lireTousCentres("centres.txt", &count);
+                    
+                    if (count > 0) {
+                        for (int i = 0; i < count; i++) {
+                            charger_centre_dans_treeview(treeview, centres[i]);
+                        }
+                        free(centres);
+                    }
+                }
+            } else {
+                afficher_message(window, "Erreur lors de la suppression du centre!", "error");
+            }
+        }
+    }
+}
+
+/* Fonction pour gérer la suppression par double-clic dans l'onglet "Afficher tous" */
+void on_treeview_afficher_double_click(GtkWidget *treeview, GtkTreePath *path, 
+                                      GtkTreeViewColumn *column, gpointer user_data) {
+    on_treeview_double_click(treeview, path, column, user_data);
+}
+//new
+void afficher_tous_centres_au_demarrage(GtkWidget *treeview) {
+    /* Vider le treeview */
+    vider_treeview(treeview);
+    
+    /* Lire tous les centres */
+    centre *centres;
+    int count = 0;
+    
+    centres = lireTousCentres("centres.txt", &count);
+    
+    if (count == 0) {
+        return;  /* Aucun centre à afficher */
+    }
+    
+    /* Afficher tous les centres */
+    for (int i = 0; i < count; i++) {
+        charger_centre_dans_treeview(treeview, centres[i]);
+    }
+    
+    free(centres);
+}
+
+void
+on_button_afficher_tous_clicked        (GtkWidget      *button,
+                                        gpointer         user_data){
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    GtkWidget *treeview = lookup_widget(window, "treeview_afficher_centre");
+    
+    if (treeview) {
+        afficher_tous_centres_au_demarrage(treeview);
+    }
+}
+void on_buttonafficher_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    GtkWidget *treeview_stats = lookup_widget(window, "fenetrestastiques");
+    GtkWidget *check_mixte = lookup_widget(window, "checkbuttonmixte");
+    GtkWidget *check_masculin = lookup_widget(window, "checkbuttonmasculin");
+    GtkWidget *check_feminin = lookup_widget(window, "checkbuttonfeminin");
+    
+    if (!treeview_stats) {
+        afficher_message(window, "Widget fenetrestastiques non trouvé!", "error");
+        return;
+    }
+    
+    /* Vider le treeview */
+    vider_treeview(treeview_stats);
+    
+    /* Lire tous les centres */
+    centre *centres;
+    int count = 0;
+    centres = lireTousCentres("centres.txt", &count);
+    
+    if (count == 0) {
+        afficher_message(window, "Aucun centre dans la base de données!", "info");
+        return;
+    }
+    
+    /* Initialiser le treeview pour les statistiques */
+    GtkListStore *store = gtk_list_store_new(3, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING);
+    
+    /* Ajouter les colonnes */
+    if (gtk_tree_view_get_column(GTK_TREE_VIEW(treeview_stats), 0) == NULL) {
+        GtkCellRenderer *renderer;
+        GtkTreeViewColumn *column;
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Type", renderer, "text", 0, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview_stats), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Nombre", renderer, "text", 1, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview_stats), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Pourcentage", renderer, "text", 2, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview_stats), column);
+    }
+    
+    gtk_tree_view_set_model(GTK_TREE_VIEW(treeview_stats), GTK_TREE_MODEL(store));
+    g_object_unref(store);
+    
+    /* Calculer les statistiques */
+    int count_mixte = 0, count_masculin = 0, count_feminin = 0;
+    
+    for (int i = 0; i < count; i++) {
+        if (strcmp(centres[i].type, "MIXTE") == 0) {
+            count_mixte++;
+        } else if (strcmp(centres[i].type, "MASCULIN") == 0) {
+            count_masculin++;
+        } else if (strcmp(centres[i].type, "FEMININ") == 0) {
+            count_feminin++;
+        }
+    }
+    
+    /* Filtrer selon les cases à cocher */
+    gboolean show_mixte = TRUE, show_masculin = TRUE, show_feminin = TRUE;
+    
+    if (check_mixte) show_mixte = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_mixte));
+    if (check_masculin) show_masculin = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_masculin));
+    if (check_feminin) show_feminin = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_feminin));
+    
+    /* Afficher les statistiques filtrées */
+    if (show_mixte && count_mixte > 0) {
+        GtkTreeIter iter;
+        gchar pourcentage[20];
+        snprintf(pourcentage, sizeof(pourcentage), "%.1f%%", (float)count_mixte / count * 100);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "MIXTE", 1, count_mixte, 2, pourcentage, -1);
+    }
+    
+    if (show_masculin && count_masculin > 0) {
+        GtkTreeIter iter;
+        gchar pourcentage[20];
+        snprintf(pourcentage, sizeof(pourcentage), "%.1f%%", (float)count_masculin / count * 100);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "MASCULIN", 1, count_masculin, 2, pourcentage, -1);
+    }
+    
+    if (show_feminin && count_feminin > 0) {
+        GtkTreeIter iter;
+        gchar pourcentage[20];
+        snprintf(pourcentage, sizeof(pourcentage), "%.1f%%", (float)count_feminin / count * 100);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "FEMININ", 1, count_feminin, 2, pourcentage, -1);
+    }
+    
+    gchar message[200];  /* Augmenté de 100 à 200 */
+    snprintf(message, sizeof(message), "Statistiques générées: %d centre(s) au total.", count);
+    afficher_message(window, message, "info");
+    
+    free(centres);
+}
+
+
+
+void charger_inscriptions_dans_treeview(GtkWidget *treeview) {
+    FILE *f = fopen("inscri.txt", "r");
+    if (f == NULL) {
+        return;
+    }
+    
+    /* Vider le treeview existant */
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    if (model != NULL) {
+        GtkListStore *store = GTK_LIST_STORE(model);
+        gtk_list_store_clear(store);
+    }
+    
+    /* Créer un nouveau store si nécessaire */
+    GtkListStore *store;
+    if (model == NULL) {
+        store = gtk_list_store_new(4, 
+            G_TYPE_INT,     // ID Inscription
+            G_TYPE_INT,     // ID Centre
+            G_TYPE_INT,     // ID Coach
+            G_TYPE_STRING   // Date
+        );
+        
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        /* Créer les colonnes */
+        GtkCellRenderer *renderer;
+        GtkTreeViewColumn *column;
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("ID Inscription", renderer, "text", 0, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("ID Centre", renderer, "text", 1, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("ID Coach", renderer, "text", 2, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Date", renderer, "text", 3, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    } else {
+        store = GTK_LIST_STORE(model);
+    }
+    
+    /* Lire et ajouter les inscriptions */
+    inscription ins;
+    GtkTreeIter iter;
+    
+    while(fscanf(f, "%d;%d;%d;%10[^\n]\n", 
+                &ins.id_inscription, &ins.id_centre, &ins.id_coach, ins.date) != EOF) {
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+            0, ins.id_inscription,
+            1, ins.id_centre,
+            2, ins.id_coach,
+            3, ins.date,
+            -1);
+    }
+    
+    fclose(f);
+}
+
+
+void
+on_buttoninscription_clicked           (GtkWidget     *button,
+                                        gpointer         user_data)
+{
+GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer les widgets */
+    GtkWidget *entry_centre = lookup_widget(window, "entryidcentresouhaite");
+    GtkWidget *entry_coach = lookup_widget(window, "entryidcoach");
+    GtkWidget *spin_jour = lookup_widget(window, "spinbuttonjour1");
+    GtkWidget *spin_mois = lookup_widget(window, "spinbuttonmois1");
+    GtkWidget *spin_annee = lookup_widget(window, "spinbuttonannee1");
+    
+    if (!entry_centre || !entry_coach || !spin_jour || !spin_mois || !spin_annee) {
+        afficher_message(window, "Erreur interne: Widgets non trouvés!", "error");
+        return;
+    }
+    
+    /* Récupérer les valeurs */
+    const gchar *centre_text = gtk_entry_get_text(GTK_ENTRY(entry_centre));
+    const gchar *coach_text = gtk_entry_get_text(GTK_ENTRY(entry_coach));
+    
+    gint jour = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_jour));
+    gint mois = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_mois));
+    gint annee = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_annee));
+    
+    /* Validation */
+    if (strlen(centre_text) == 0 || strlen(coach_text) == 0) {
+        afficher_message(window, "L'ID du centre et l'ID du coach sont obligatoires!", "error");
+        return;
+    }
+    
+    int id_centre = atoi(centre_text);
+    int id_coach = atoi(coach_text);
+    
+    if (id_centre <= 0) {
+        afficher_message(window, "L'ID du centre doit être un nombre positif!", "error");
+        return;
+    }
+    
+    if (id_coach <= 0) {
+        afficher_message(window, "L'ID du coach doit être un nombre positif!", "error");
+        return;
+    }
+    
+    /* Validation de la date */
+    if (jour < 1 || jour > 31) {
+        afficher_message(window, "Jour invalide! Doit être entre 1 et 31.", "error");
+        return;
+    }
+    
+    if (mois < 1 || mois > 12) {
+        afficher_message(window, "Mois invalide! Doit être entre 1 et 12.", "error");
+        return;
+    }
+    
+    if (annee < 0 || annee > 99) {
+        afficher_message(window, "Année invalide! Doit être entre 0 et 100.", "error");
+        return;
+    }
+
+    int annee_reelle;
+    if (annee >= 0 && annee <= 99) {
+        annee_reelle = 2000 + annee;  /* 0-99 → 2000-2099 */
+    } else if (annee == 100) {
+        annee_reelle = 2100;  /* 100 → 2100 */
+    } else {
+        afficher_message(window, "Année invalide!", "error");
+        return;
+    }
+    
+    /* Vérifier si le centre existe */
+    centre c = chercherCentre("centres.txt", id_centre);
+    if (c.id == -1) {
+        afficher_message(window, "Centre non trouvé! Veuillez vérifier l'ID du centre.", "error");
+        return;
+    }
+    
+    /* Formater la date */
+    char date[11];
+    snprintf(date, sizeof(date), "%02d/%02d/%04d", jour, mois, annee_reelle);
+    
+    /* Vérifier si l'inscription existe déjà */
+    if (verifierInscriptionExiste("inscri.txt", id_centre, id_coach, date)) {
+        afficher_message(window, "Cette inscription existe déjà!", "error");
+        return;
+    }
+    
+    /* Générer un ID pour l'inscription */
+    int id_inscription = genererIdInscription();
+    
+    /* Créer la structure inscription */
+    inscription nouvelle_inscription;
+    nouvelle_inscription.id_inscription = id_inscription;
+    nouvelle_inscription.id_centre = id_centre;
+    nouvelle_inscription.id_coach = id_coach;
+    strncpy(nouvelle_inscription.date, date, sizeof(nouvelle_inscription.date) - 1);
+    nouvelle_inscription.date[sizeof(nouvelle_inscription.date) - 1] = '\0';
+    
+    /* Ajouter l'inscription */
+    int resultat = ajouterInscription("inscri.txt", nouvelle_inscription);
+    
+    if (resultat == 1) {
+        /* Afficher un message de succès */
+        GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+            GTK_DIALOG_MODAL,
+            GTK_MESSAGE_INFO,
+            GTK_BUTTONS_OK,
+            "Inscription ajoutée avec succès!\n\n"
+            "ID Inscription: %d\n"
+            "ID Centre: %d\n"
+            "ID Coach: %d\n"
+            "Date: %s",
+            id_inscription, id_centre, id_coach, date);
+        gtk_window_set_title(GTK_WINDOW(dialog), "Succès");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        
+        /* Réinitialiser les champs */
+        gtk_entry_set_text(GTK_ENTRY(entry_centre), "");
+        gtk_entry_set_text(GTK_ENTRY(entry_coach), "");
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_jour), 1);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_mois), 1);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_annee), 2024);
+    } else {
+        afficher_message(window, "Erreur lors de l'ajout de l'inscription!", "error");
+    }
+}
+
+
+void
+on_buttonvoirinscription_clicked       (GtkWidget       *button,
+                                        gpointer         user_data)
+{
+ GtkWidget *window1 = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Créer la fenêtre des inscriptions */
+    GtkWidget *window2 = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window2), "Mes Inscriptions");
+    gtk_window_set_default_size(GTK_WINDOW(window2), 600, 400);
+    gtk_window_set_position(GTK_WINDOW(window2), GTK_WIN_POS_CENTER);
+    gtk_window_set_transient_for(GTK_WINDOW(window2), GTK_WINDOW(window1));
+    
+    /* Créer un conteneur principal */
+    GtkWidget *vbox = gtk_vbox_new(FALSE, 5);
+    gtk_container_add(GTK_CONTAINER(window2), vbox);
+    gtk_container_set_border_width(GTK_CONTAINER(window2), 10);
+    
+    /* Créer le treeview */
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    
+    GtkWidget *treeview = gtk_tree_view_new();
+    gtk_container_add(GTK_CONTAINER(scrolled_window), treeview);
+    
+    /* Ajouter un ID au treeview pour pouvoir le retrouver */
+    g_object_set_data(G_OBJECT(window2), "treeview3", treeview);
+    
+    /* Créer les boutons */
+    GtkWidget *hbox = gtk_hbox_new(TRUE, 10);
+    
+    GtkWidget *button_actualiser = gtk_button_new_with_label("Actualiser");
+    GtkWidget *button_fermer = gtk_button_new_with_label("Retour");
+    
+    gtk_box_pack_start(GTK_BOX(hbox), button_actualiser, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), button_fermer, FALSE, FALSE, 0);
+    
+    /* Ajouter les widgets au conteneur principal */
+    gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 5);
+    
+    /* Charger les inscriptions */
+    charger_inscriptions_dans_treeview(treeview);
+    
+    /* Connecter les signaux */
+    g_signal_connect(button_actualiser, "clicked", 
+                     G_CALLBACK(on_buttonrefrech_clicked), window2);
+    g_signal_connect(button_fermer, "clicked", 
+                     G_CALLBACK(on_buttonretour_clicked), window2);
+    g_signal_connect(window2, "destroy", 
+                     G_CALLBACK(gtk_widget_destroy), NULL);
+    
+    /* Afficher la fenêtre */
+    gtk_widget_show_all(window2);
+}
+
+
+void
+on_buttonretour_clicked                (GtkWidget      *button,
+                                        gpointer         user_data)
+{
+ /* Fermer la fenêtre actuelle (fenêtre des inscriptions) */
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    gtk_widget_destroy(window);
+}
+
+
+void
+on_buttonrefrech_clicked               (GtkWidget       *button,
+                                        gpointer         user_data)
+{
+/* Actualiser la liste des inscriptions */
+    GtkWidget *window2 = GTK_WIDGET(user_data);
+    
+    /* Récupérer le treeview */
+    GtkWidget *treeview = g_object_get_data(G_OBJECT(window2), "treeview3");
+    
+    if (treeview != NULL) {
+        charger_inscriptions_dans_treeview(treeview);
+        afficher_message(window2, "Liste des inscriptions actualisée!", "info");
+    }
+}
+
+
+
+void
+on_centre_clicked                      (GtkWidget       *objet_graphique,
+                                        gpointer         user_data)
+{
+  // Obtenir la fenêtre parente du bouton
+    GtkWidget *parent_window = gtk_widget_get_toplevel(objet_graphique);
+    
+    // Cacher la fenêtre actuelle
+    gtk_widget_hide(parent_window);
+    
+    // Créer et afficher la fenêtre de gestion des membres
+    GtkWidget *gestioncentres = create_gestioncentres();
+    gtk_widget_show_all(gestioncentres);
+}
+

@@ -79,4 +79,40 @@ typedef struct {
 // Fonctions histogramme
 HistogrammeData calculer_donnees_histogramme();
 void dessiner_histogramme(void *cr_ptr, int width, int height, HistogrammeData data);
+
+
+//centre
+typedef struct
+{
+    int id;
+    char nom[50];
+    char adresse[100];
+    char telephone[20];
+    char specialisation[100];
+    char capacite[50];
+    char horaires_matin[20];
+    char horaires_midi[20];
+    char horaires_soir[20];
+    char type[20];
+    char photo_path[100];
+} centre;
+
+
+typedef struct {
+    int id_inscription;
+    int id_centre;
+    int id_coach;
+    char date[11]; // format : JJ/MM/AAAA
+} inscription;
+// Le type de retour int c'est pour indiquer si la tâche a été réalisée avec succès ou non
+// pour afficher des messages plus tard exemple erreur d'ouverture de fichier, élément introuvable
+int ajouterCentre(char *filename, centre c);
+int modifierCentre(char *filename, int id, centre nouv);
+int supprimerCentre(char *filename, int id);
+centre chercherCentre(char *filename, int id);
+
+int ajouterInscription(char *filename, inscription ins);
+int verifierInscriptionExiste(char *filename, int id_centre, int id_coach, char *date);
+int genererIdInscription();
+void afficherInscriptions(char *filename);
 #endif

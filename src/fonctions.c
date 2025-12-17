@@ -1038,3 +1038,232 @@ void dessiner_histogramme(void *cr_ptr, int width, int height, HistogrammeData d
     cairo_move_to(cr, width - 150, height - 20);
     cairo_show_text(cr, date);
 }
+
+//centre
+
+int ajouterCentre(char *filename, centre c) {
+    FILE *f = fopen(filename, "a");  // Mode "a" pour append (ajouter)
+    if (f == NULL) {
+        printf("Erreur: Impossible d'ouvrir le fichier %s\n", filename);
+        return 0;
+    }
+    
+    // Écrire toutes les données séparées par des points-virgules
+    fprintf(f, "%d;%s;%s;%s;%s;%s;%s;%s;%s;%s\n",
+            c.id, c.nom, c.adresse, c.telephone, c.specialisation,
+            c.capacite, c.horaires_matin, c.horaires_midi, 
+            c.horaires_soir, c.type);
+    
+    fclose(f);
+    return 1;
+}
+
+int modifierCentre(char *filename, int id, centre nouv)
+{
+    int tr = 0;
+    centre c;
+    FILE *f = fopen(filename, "r");
+    FILE *f2 = fopen("temp.txt", "w");
+    
+    if(f != NULL && f2 != NULL)
+    {
+        while(fscanf(f, "%d;%49[^;];%99[^;];%19[^;];%99[^;];%49[^;];%19[^;];%19[^;];%19[^;];%19[^;];%99[^\n]\n",
+                     &c.id, c.nom, c.adresse, c.telephone,
+                     c.specialisation, c.capacite,
+                     c.horaires_matin, c.horaires_midi, c.horaires_soir,
+                     c.type, c.photo_path) != EOF)
+        {
+            if(c.id == id)
+            {
+                fprintf(f2, "%d;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s\n",
+                        nouv.id, nouv.nom, nouv.adresse, nouv.telephone,
+                        nouv.specialisation, nouv.capacite,
+                        nouv.horaires_matin, nouv.horaires_midi, nouv.horaires_soir,
+                        nouv.type, nouv.photo_path);
+                tr = 1;
+            }
+            else
+            {
+                fprintf(f2, "%d;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s\n",
+                        c.id, c.nom, c.adresse, c.telephone,
+                        c.specialisation, c.capacite,
+                        c.horaires_matin, c.horaires_midi, c.horaires_soir,
+                        c.type, c.photo_path);
+            }
+        }
+    }
+    
+    if(f != NULL) fclose(f);
+    if(f2 != NULL) fclose(f2);
+    
+    if(tr == 1)
+    {
+        remove(filename);
+        rename("temp.txt", filename);
+    }
+    else
+    {
+        remove("temp.txt");
+    }
+    
+    return tr;
+}
+
+int supprimerCentre(char *filename, int id)
+{
+    int tr = 0;
+    centre c;
+    FILE *f = fopen(filename, "r");
+    FILE *f2 = fopen("temp.txt", "w");
+    
+    if(f != NULL && f2 != NULL)
+    {
+        while(fscanf(f, "%d;%49[^;];%99[^;];%19[^;];%99[^;];%49[^;];%19[^;];%19[^;];%19[^;];%19[^;];%99[^\n]\n",
+                     &c.id, c.nom, c.adresse, c.telephone,
+                     c.specialisation, c.capacite,
+                     c.horaires_matin, c.horaires_midi, c.horaires_soir,
+                     c.type, c.photo_path) != EOF)
+        {
+            if(c.id == id)
+            {
+                tr = 1;
+            }
+            else
+            {
+                fprintf(f2, "%d;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s\n",
+                        c.id, c.nom, c.adresse, c.telephone,
+                        c.specialisation, c.capacite,
+                        c.horaires_matin, c.horaires_midi, c.horaires_soir,
+                        c.type, c.photo_path);
+            }
+        }
+    }
+    
+    if(f != NULL) fclose(f);
+    if(f2 != NULL) fclose(f2);
+    
+    if(tr == 1)
+    {
+        remove(filename);
+        rename("temp.txt", filename);
+    }
+    else
+    {
+        remove("temp.txt");
+    }
+    
+    return tr;
+}
+
+centre chercherCentre(char *filename, int id)
+{
+    centre c;
+    int tr = 0;
+    FILE *f = fopen(filename, "r");
+    
+    if(f != NULL)
+    {
+        while(tr == 0 && fscanf(f, "%d;%49[^;];%99[^;];%19[^;];%99[^;];%49[^;];%19[^;];%19[^;];%19[^;];%19[^;];%99[^\n]\n",
+                                &c.id, c.nom, c.adresse, c.telephone,
+                                c.specialisation, c.capacite,
+                                c.horaires_matin, c.horaires_midi, c.horaires_soir,
+                                c.type, c.photo_path) != EOF)
+        {
+            if(c.id == id)
+            {
+                tr = 1;
+            }
+        }
+        fclose(f);
+    }
+    
+    if(tr == 0)
+        c.id = -1;
+    
+    return c;
+}
+
+
+int ajouterInscription(char *filename, inscription ins)
+{
+    FILE *f = fopen(filename, "a");
+    if(f != NULL)
+    {
+        fprintf(f, "%d;%d;%d;%s\n",
+                ins.id_inscription, 
+                ins.id_centre, 
+                ins.id_coach,
+                ins.date);
+        fclose(f);
+        return 1;
+    }
+    else 
+        return 0;
+}
+
+int verifierInscriptionExiste(char *filename, int id_centre, int id_coach, char *date)
+{
+    FILE *f = fopen(filename, "r");
+    if(f != NULL)
+    {
+        inscription ins;
+        char ligne[256];
+        while(fgets(ligne, sizeof(ligne), f))
+        {
+            if(sscanf(ligne, "%d;%d;%d;%10[^\n]", 
+                     &ins.id_inscription, &ins.id_centre, &ins.id_coach, ins.date) == 4)
+            {
+                if(ins.id_centre == id_centre && ins.id_coach == id_coach && strcmp(ins.date, date) == 0)
+                {
+                    fclose(f);
+                    return 1; // Inscription existe déjà
+                }
+            }
+        }
+        fclose(f);
+    }
+    return 0; // Inscription n'existe pas
+}
+
+int genererIdInscription() {
+    int dernier_id = 0;
+    FILE *f = fopen("inscri.txt", "r");
+    
+    if(f != NULL)
+    {
+        inscription ins;
+        char ligne[256];
+        while(fgets(ligne, sizeof(ligne), f))
+        {
+            if(sscanf(ligne, "%d;", &ins.id_inscription) == 1)
+            {
+                if(ins.id_inscription > dernier_id)
+                {
+                    dernier_id = ins.id_inscription;
+                }
+            }
+        }
+        fclose(f);
+    }
+    
+    return dernier_id + 1;
+}
+
+void afficherInscriptions(char *filename) {
+    FILE *f = fopen(filename, "r");
+    if(f != NULL)
+    {
+        inscription ins;
+        printf("Liste des inscriptions:\n");
+        printf("ID\tCentre\tCoach\tDate\n");
+        printf("--------------------------------\n");
+        
+        while(fscanf(f, "%d;%d;%d;%10[^\n]\n", 
+                    &ins.id_inscription, &ins.id_centre, &ins.id_coach, ins.date) != EOF)
+        {
+            printf("%d\t%d\t%d\t%s\n", 
+                   ins.id_inscription, ins.id_centre, ins.id_coach, ins.date);
+        }
+        fclose(f);
+    }
+}

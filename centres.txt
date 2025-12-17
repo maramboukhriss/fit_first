@@ -1,0 +1,11 @@
+1145;tuisports;tunis;12346;pilates;55;10;12;18;FEMININ
+;aucune
+1188;gym;bizerte;14789;pilates;50;9;14;18;FEMININ
+;aucune
+895;4tgg;fdgg;6536;cardio;6325;8;12;16;MIXTE
+;energysports;bizerte;147895;tennis;563;8;12;16;MIXTE
+1133;rafif;cartHAGE;124656;gymnastique;88;8;14;18;FEMININ;aucune
+1196;tuisport;marsa;14696;padel;66;8;12;16;MIXTE
+;aucune
+11556;gym;tunis;1235;cardio;23;8;12;16;MIXTE
+;aucune

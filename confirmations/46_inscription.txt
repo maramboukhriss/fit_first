@@ -1,0 +1,15 @@
+=== CONFIRMATION D'INSCRIPTION ===
+
+Date: Dec 17 2025
+Heure: 18:32:14
+
+DESTINATAIRE:
+  dffgb eya
+  Email: erfgv@dfg
+  Téléphone: 2226
+
+DÉTAILS DE L'INSCRIPTION:
+  ID Membre: 46
+  Statut: CONFIRMÉ
+
+En production, cet email serait envoyé à l'adresse ci-dessus.

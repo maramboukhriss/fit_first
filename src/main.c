@@ -22,7 +22,10 @@ main (int argc, char *argv[])
   GtkWidget *acceuiladmin;
   GtkWidget *acceuilmembre;
   GtkWidget *acceuilentraineur;
-
+  GtkWidget *gestioncentres;
+  GtkWidget *window1;
+  GtkWidget *window2;
+  
 #ifdef ENABLE_NLS
   bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
@@ -41,6 +44,7 @@ main (int argc, char *argv[])
    */
   authentification = create_authentification ();
   gtk_widget_show (authentification);
+  
 
 
   gtk_main ();

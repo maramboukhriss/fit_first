@@ -603,10 +603,10 @@ callbacks.o: callbacks.c /usr/include/stdc-predef.h ../config.h \
  /usr/include/gtk-2.0/gtk/gtkoldeditable.h \
  /usr/include/gtk-2.0/gtk/gtkoptionmenu.h \
  /usr/include/gtk-2.0/gtk/gtkpreview.h \
- /usr/include/gtk-2.0/gtk/gtktipsquery.h callbacks.h interface.h \
- support.h /usr/include/libintl.h /usr/include/locale.h \
- /usr/include/x86_64-linux-gnu/bits/locale.h fonctions.h \
- /usr/include/math.h /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+ /usr/include/gtk-2.0/gtk/gtktipsquery.h callbacks.h fonctions.h \
+ interface.h support.h /usr/include/libintl.h /usr/include/locale.h \
+ /usr/include/x86_64-linux-gnu/bits/locale.h /usr/include/math.h \
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
  /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
  /usr/include/x86_64-linux-gnu/bits/fp-logb.h \
@@ -1957,6 +1957,8 @@ callbacks.o: callbacks.c /usr/include/stdc-predef.h ../config.h \
 
 callbacks.h:
 
+fonctions.h:
+
 interface.h:
 
 support.h:
@@ -1966,8 +1968,6 @@ support.h:
 /usr/include/locale.h:
 
 /usr/include/x86_64-linux-gnu/bits/locale.h:
-
-fonctions.h:
 
 /usr/include/math.h:
 
