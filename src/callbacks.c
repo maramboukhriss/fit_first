@@ -3725,4 +3725,1571 @@ on_centre_clicked                      (GtkWidget       *objet_graphique,
     GtkWidget *gestioncentres = create_gestioncentres();
     gtk_widget_show_all(gestioncentres);
 }
+//entraineur
+int experience_ajout = 1;
+int specialite_ajout = 1;
+int experience_modif = 1;
+int specialite_modif = 1;
+char statut_ajout[20] = "disponible";
+char statut_modif[20] = "disponible";
+char disponibilite_ajout[20] = "Matin";
+char disponibilite_modif[20] = "Matin";
+Entraineur entraineur_courant;
+char jours_ajout[100] = "";
+char jours_modif[100] = "";
+
+void retirer_jour(char *jours, const char *jour) {
+    if (strlen(jours) == 0) return;
+    
+    char temp[100] = "";
+    char *token;
+    char jours_copy[100];
+    int premier = 1;
+    
+    strcpy(jours_copy, jours);
+    token = strtok(jours_copy, ",");
+    
+    while (token) {
+        char *clean_token = token;
+        while (*clean_token == ' ') clean_token++;
+        
+        if (strcmp(clean_token, jour) != 0) {
+            if (!premier) strcat(temp, ",");
+            strcat(temp, clean_token);
+            premier = 0;
+        }
+        token = strtok(NULL, ",");
+    }
+    strcpy(jours, temp);
+}
+
+void on_radiobutton3_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(statut_ajout, "complet");
+    }
+}
+
+void on_radiobutton4_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(statut_ajout, "disponible");
+    }
+}
+
+void on_radiobutton1_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(statut_modif, "complet");
+    }
+}
+
+void on_radiobutton2_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        strcpy(statut_modif, "disponible");
+    }
+}
+
+void on_lundi_checkbutton1_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_ajout) > 0 && jours_ajout[strlen(jours_ajout)-1] != ',') 
+            strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Lundi");
+    } else {
+        retirer_jour(jours_ajout, "Lundi");
+    }
+}
+
+void on_mardi_checkbutton2_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_ajout) > 0 && jours_ajout[strlen(jours_ajout)-1] != ',') 
+            strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Mardi");
+    } else {
+        retirer_jour(jours_ajout, "Mardi");
+    }
+}
+
+void on_mercredi_checkbutton3_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_ajout) > 0 && jours_ajout[strlen(jours_ajout)-1] != ',') 
+            strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Mercredi");
+    } else {
+        retirer_jour(jours_ajout, "Mercredi");
+    }
+}
+
+void on_jeudi_checkbutton4_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_ajout) > 0 && jours_ajout[strlen(jours_ajout)-1] != ',') 
+            strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Jeudi");
+    } else {
+        retirer_jour(jours_ajout, "Jeudi");
+    }
+}
+
+void on_vendredi_checkbutton5_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_ajout) > 0 && jours_ajout[strlen(jours_ajout)-1] != ',') 
+            strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Vendredi");
+    } else {
+        retirer_jour(jours_ajout, "Vendredi");
+    }
+}
+
+void on_samedi_checkbutton6_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_ajout) > 0 && jours_ajout[strlen(jours_ajout)-1] != ',') 
+            strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Samedi");
+    } else {
+        retirer_jour(jours_ajout, "Samedi");
+    }
+}
+
+void on_lundi_checkbutton7_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_modif) > 0 && jours_modif[strlen(jours_modif)-1] != ',') 
+            strcat(jours_modif, ",");
+        strcat(jours_modif, "Lundi");
+    } else {
+        retirer_jour(jours_modif, "Lundi");
+    }
+}
+
+void on_mardi_checkbutton8_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_modif) > 0 && jours_modif[strlen(jours_modif)-1] != ',') 
+            strcat(jours_modif, ",");
+        strcat(jours_modif, "Mardi");
+    } else {
+        retirer_jour(jours_modif, "Mardi");
+    }
+}
+
+void on_mercredi_checkbutton9_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_modif) > 0 && jours_modif[strlen(jours_modif)-1] != ',') 
+            strcat(jours_modif, ",");
+        strcat(jours_modif, "Mercredi");
+    } else {
+        retirer_jour(jours_modif, "Mercredi");
+    }
+}
+
+void on_jeudi_checkbutton10_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_modif) > 0 && jours_modif[strlen(jours_modif)-1] != ',') 
+            strcat(jours_modif, ",");
+        strcat(jours_modif, "Jeudi");
+    } else {
+        retirer_jour(jours_modif, "Jeudi");
+    }
+}
+
+void on_vendredi_checkbutton11_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_modif) > 0 && jours_modif[strlen(jours_modif)-1] != ',') 
+            strcat(jours_modif, ",");
+        strcat(jours_modif, "Vendredi");
+    } else {
+        retirer_jour(jours_modif, "Vendredi");
+    }
+}
+
+void on_samedi_checkbutton12_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    if (gtk_toggle_button_get_active(togglebutton)) {
+        if (strlen(jours_modif) > 0 && jours_modif[strlen(jours_modif)-1] != ',') 
+            strcat(jours_modif, ",");
+        strcat(jours_modif, "Samedi");
+    } else {
+        retirer_jour(jours_modif, "Samedi");
+    }
+}
+
+void on_button_ajouter_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) return;
+    
+    // Récupérer tous les widgets
+    GtkWidget *entry_id = lookup_widget(window, "ajout_id_entry116");
+    GtkWidget *entry_nom = lookup_widget(window, "ajout_nom_entry117");
+    GtkWidget *entry_specialite = lookup_widget(window, "ajout_specialite_entry118");
+    GtkWidget *entry_email = lookup_widget(window, "ajout_mail_entry119");
+    GtkWidget *entry_reseaux = lookup_widget(window, "ajout_reseaux_entry121");
+    GtkWidget *combo_dispo = lookup_widget(window, "ajout_dispo_comboboxentry23");
+    GtkWidget *spin_experience = lookup_widget(window, "spinbutton1");
+    GtkWidget *radio_complet = lookup_widget(window, "radiobutton3");
+    GtkWidget *radio_disponible = lookup_widget(window, "radiobutton4");
+    GtkWidget *treeview1000 = lookup_widget(window, "treeview1000");
+    GtkWidget *treeview6 = lookup_widget(window, "treeview6");
+    
+    // Checkbuttons pour les jours
+    GtkWidget *check_lundi = lookup_widget(window, "lundi_checkbutton1");
+    GtkWidget *check_mardi = lookup_widget(window, "mardi_checkbutton2");
+    GtkWidget *check_mercredi = lookup_widget(window, "mercredi_checkbutton3");
+    GtkWidget *check_jeudi = lookup_widget(window, "jeudi_checkbutton4");
+    GtkWidget *check_vendredi = lookup_widget(window, "vendredi_checkbutton5");
+    GtkWidget *check_samedi = lookup_widget(window, "samedi_checkbutton6");
+
+    // Vérifications basiques
+    if (!entry_id || !entry_nom) return;
+
+    // Variables pour stocker les valeurs
+    char id[20], nom_complet[100], specialite_val[50], email[100], reseaux[100], disponibilite[50];
+    
+    // Récupérer les valeurs des Entry
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id));
+    const gchar *nom_text = gtk_entry_get_text(GTK_ENTRY(entry_nom));
+    
+    strcpy(id, id_text ? id_text : "");
+    strcpy(nom_complet, nom_text ? nom_text : "");
+   
+    // Spécialité
+    if (entry_specialite) {
+        const gchar *text = gtk_entry_get_text(GTK_ENTRY(entry_specialite));
+        strcpy(specialite_val, text ? text : "");
+    } else {
+        strcpy(specialite_val, "");
+    }
+   
+    // Email
+    if (entry_email) {
+        const gchar *text = gtk_entry_get_text(GTK_ENTRY(entry_email));
+        strcpy(email, text ? text : "");
+    } else {
+        strcpy(email, "");
+    }
+   
+    // Réseaux sociaux
+    if (entry_reseaux) {
+        const gchar *text = gtk_entry_get_text(GTK_ENTRY(entry_reseaux));
+        if (text && strlen(text) > 0) {
+            strcpy(reseaux, text);
+        } else {
+            strcpy(reseaux, "");  // Vide si pas saisi
+        }
+    } else {
+        strcpy(reseaux, "");
+    }
+
+    // Expérience (spinbutton)
+    if (spin_experience && GTK_IS_SPIN_BUTTON(spin_experience)) {
+        experience_ajout = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_experience));
+    }
+
+    // Disponibilité (combobox)
+    if (combo_dispo && GTK_IS_COMBO_BOX(combo_dispo)) {
+        gchar *text = gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo_dispo));
+        if (text) {
+            strcpy(disponibilite, text);
+            g_free(text);
+        } else {
+            strcpy(disponibilite, "Matin");  // Par défaut
+        }
+    } else {
+        strcpy(disponibilite, "Matin");
+    }
+
+    // Statut (radiobuttons)
+    strcpy(statut_ajout, "disponible");  // Par défaut
+    if (radio_complet && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_complet))) {
+        strcpy(statut_ajout, "complet");
+    } else if (radio_disponible && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_disponible))) {
+        strcpy(statut_ajout, "disponible");
+    }
+    
+    // JOURS - Reconstruire depuis les checkbuttons
+    strcpy(jours_ajout, "");  // Réinitialiser
+    
+    if (check_lundi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_lundi))) {
+        strcat(jours_ajout, "Lundi");
+    }
+    if (check_mardi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_mardi))) {
+        if (strlen(jours_ajout) > 0) strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Mardi");
+    }
+    if (check_mercredi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_mercredi))) {
+        if (strlen(jours_ajout) > 0) strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Mercredi");
+    }
+    if (check_jeudi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_jeudi))) {
+        if (strlen(jours_ajout) > 0) strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Jeudi");
+    }
+    if (check_vendredi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_vendredi))) {
+        if (strlen(jours_ajout) > 0) strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Vendredi");
+    }
+    if (check_samedi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_samedi))) {
+        if (strlen(jours_ajout) > 0) strcat(jours_ajout, ",");
+        strcat(jours_ajout, "Samedi");
+    }
+
+    // Validation
+    if (strlen(id) == 0 || strlen(nom_complet) == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "L'ID et le Nom sont obligatoires!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
+    // Vérifier si l'ID existe déjà
+    Entraineur existant = chercher_entraineur(id);
+    if (strcmp(existant.id, "Non trouvé") != 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Cet ID existe déjà!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
+    // CRÉATION DE L'ENTRAÎNEUR AVEC NOUVELLE STRUCTURE
+    Entraineur e;
+    memset(&e, 0, sizeof(Entraineur));
+    
+    // CHAMP 1: ID
+    strncpy(e.id, id, sizeof(e.id)-1);
+    
+    // CHAMP 2: Nom complet (nom + prénom ensemble)
+    strncpy(e.nom_complet, nom_complet, sizeof(e.nom_complet)-1);
+    
+    // CHAMP 3: Spécialité
+    if (strlen(specialite_val) > 0) {
+        strncpy(e.specialite, specialite_val, sizeof(e.specialite)-1);
+    } else {
+        strcpy(e.specialite, "Général");  // Par défaut
+    }
+
+    // CHAMP 4: Email
+    strncpy(e.email, email, sizeof(e.email)-1);
+    
+    // CHAMP 5: Expérience
+    snprintf(e.experience, sizeof(e.experience), "%d années", experience_ajout);
+    
+    // CHAMP 6: Réseaux sociaux
+    strncpy(e.reseaux_sociaux, reseaux, sizeof(e.reseaux_sociaux)-1);
+    
+    // CHAMP 7: Statut
+    strncpy(e.statut, statut_ajout, sizeof(e.statut)-1);
+    
+    // CHAMP 8: Jours
+    strncpy(e.jours, jours_ajout, sizeof(e.jours)-1);
+    
+    // CHAMP 9: Disponibilité
+    strncpy(e.disponibilite, disponibilite, sizeof(e.disponibilite)-1);
+
+    // DEBUG AVANT AJOUT
+    g_print("\n=== AJOUT ENTRAÎNEUR - STRUCTURE COMPLÈTE ===\n");
+    g_print("1. ID: '%s'\n", e.id);
+    g_print("2. Nom complet: '%s'\n", e.nom_complet);
+    g_print("3. Spécialité: '%s'\n", e.specialite);
+    g_print("4. Email: '%s'\n", e.email);
+    g_print("5. Expérience: '%s'\n", e.experience);
+    g_print("6. Réseaux sociaux: '%s'\n", e.reseaux_sociaux);
+    g_print("7. Statut: '%s'\n", e.statut);
+    g_print("8. Jours: '%s'\n", e.jours);
+    g_print("9. Disponibilité: '%s'\n", e.disponibilite);
+    g_print("Format fichier: %s|%s|%s|%s|%s|%s|%s|%s|%s\n",
+            e.id, e.nom_complet, e.specialite, e.email,
+            e.experience, e.reseaux_sociaux, e.statut, e.jours, e.disponibilite);
+    g_print("=== FIN AJOUT ===\n");
+
+    // Ajouter dans le fichier
+    ajouter_entraineur(e);
+
+    // Mettre à jour les TreeViews
+    if (treeview1000) afficher_tous_entraineurs(treeview1000);
+    if (treeview6) afficher_tous_entraineurs(treeview6);
+
+    // Message de succès
+    GtkWidget *dialog = gtk_message_dialog_new(NULL,
+        GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+        "Entraîneur ajouté avec succès!");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+
+    // RÉINITIALISATION DES CHAMPS
+    gtk_entry_set_text(GTK_ENTRY(entry_id), "");
+    gtk_entry_set_text(GTK_ENTRY(entry_nom), "");
+    if (entry_specialite) gtk_entry_set_text(GTK_ENTRY(entry_specialite), "");
+    if (entry_email) gtk_entry_set_text(GTK_ENTRY(entry_email), "");
+    if (entry_reseaux) gtk_entry_set_text(GTK_ENTRY(entry_reseaux), "");
+    
+    // Décocher tous les checkbuttons
+    if (check_lundi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_lundi), FALSE);
+    if (check_mardi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mardi), FALSE);
+    if (check_mercredi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mercredi), FALSE);
+    if (check_jeudi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_jeudi), FALSE);
+    if (check_vendredi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_vendredi), FALSE);
+    if (check_samedi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_samedi), FALSE);
+
+    // Réinitialiser les variables globales
+    strcpy(statut_ajout, "disponible");
+    experience_ajout = 1;
+    strcpy(jours_ajout, "");
+    
+    // Radio par défaut
+    GtkWidget *radio_dispo = lookup_widget(window, "radiobutton4");
+    if (radio_dispo) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_dispo), TRUE);
+    
+    // Spinbutton par défaut
+    GtkWidget *spin_exp = lookup_widget(window, "spinbutton1");
+    if (spin_exp) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_exp), 1);
+}
+
+// ==================== CORRECTION : RECHERCHE DANS L'ONGLET "RECHERCHER" ====================
+void on_button_rechercher_clicked(GtkWidget *button, gpointer user_data) {
+    printf("DEBUG: Bouton recherche (onglet Rechercher) cliqué!\n");
+    
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) {
+        printf("DEBUG: Window non trouvée!\n");
+        return;
+    }
+    
+    // CORRECTION: Le bouton avec loupe dans l'onglet "Rechercher" recherche dans entry132
+    GtkWidget *entry_id = lookup_widget(window, "entry132");
+    if (!entry_id) {
+        printf("DEBUG: entry132 non trouvé!\n");
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+            "Erreur: Champ de recherche non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    GtkWidget *treeview1000 = lookup_widget(window, "treeview1000");
+    if (!treeview1000) {
+        printf("DEBUG: treeview1000 non trouvé!\n");
+        return;
+    }
+    
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id));
+    printf("DEBUG: ID saisi: '%s'\n", id_text ? id_text : "NULL");
+    
+    char id[20];
+    strncpy(id, id_text ? id_text : "", sizeof(id)-1);
+    id[sizeof(id)-1] = '\0';
+    
+    if (strlen(id) == 0) {
+        printf("DEBUG: Champ vide, afficher tous\n");
+        // Si champ vide, afficher tous les entraîneurs
+        afficher_tous_entraineurs(treeview1000);
+        return;
+    }
+    
+    printf("DEBUG: Recherche de l'ID: %s\n", id);
+    Entraineur e = chercher_entraineur(id);
+    
+    if (strcmp(e.id, "Non trouvé") == 0) {
+        printf("DEBUG: Entraîneur non trouvé\n");
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Entraîneur non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        
+        // Vider le TreeView
+        GtkListStore *store = gtk_list_store_new(8,
+            G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+            G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+            G_TYPE_STRING, G_TYPE_STRING);
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview1000), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+    } else {
+        printf("DEBUG: Entraîneur trouvé: %s - %s\n", e.id, e.nom_complet);
+        
+        // Configurer les colonnes si nécessaire
+        GList *columns = gtk_tree_view_get_columns(GTK_TREE_VIEW(treeview1000));
+        if (columns == NULL) {
+            configurer_columns_treeview(treeview1000);
+        }
+        if (columns) g_list_free(columns);
+        
+        // Afficher l'entraîneur trouvé
+        GtkListStore *store;
+        GtkTreeIter iter;
+        
+        store = gtk_list_store_new(8,
+            G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+            G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+            G_TYPE_STRING, G_TYPE_STRING);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+            0, e.id,
+            1, e.nom_complet,
+            2, e.specialite,
+            3, e.email,
+            4, e.experience,
+            5, e.reseaux_sociaux,
+            6, e.statut,
+            7, e.jours,
+            -1);
+        
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview1000), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        printf("DEBUG: Entraîneur affiché dans treeview1000\n");
+    }
+}
+
+void on_button_modifier_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) return;
+    
+    GtkWidget *entry_id = lookup_widget(window, "entry130");
+    GtkWidget *entry_nouv_id = lookup_widget(window, "entry123");
+    GtkWidget *entry_nouv_nom = lookup_widget(window, "entry124");
+    GtkWidget *entry_specialite = lookup_widget(window, "entry127");
+    GtkWidget *entry_email = lookup_widget(window, "entry126");
+    GtkWidget *entry_experience = lookup_widget(window, "spinbutton2");
+    GtkWidget *entry_reseaux = lookup_widget(window, "entry128");
+    GtkWidget *radio_complet = lookup_widget(window, "radiobutton1");
+    GtkWidget *radio_disponible = lookup_widget(window, "radiobutton2");
+    GtkWidget *combo_dispo = lookup_widget(window, "comboboxentry25");
+    
+    GtkWidget *check_lundi = lookup_widget(window, "lundi_checkbutton7");
+    GtkWidget *check_mardi = lookup_widget(window, "mardi_checkbutton8");
+    GtkWidget *check_mercredi = lookup_widget(window, "mercredi_checkbutton9");
+    GtkWidget *check_jeudi = lookup_widget(window, "jeudi_checkbutton10");
+    GtkWidget *check_vendredi = lookup_widget(window, "vendredi_checkbutton11");
+    GtkWidget *check_samedi = lookup_widget(window, "samedi_checkbutton12");
+
+    if (!entry_id) {
+        g_print("ERROR: entry130 non trouvé\n");
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+            "Erreur: Champ ID non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
+    char id[20];
+    strcpy(id, gtk_entry_get_text(GTK_ENTRY(entry_id)));
+
+    if (strlen(id) == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Veuillez entrer un ID d'entraîneur!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
+    entraineur_courant = chercher_entraineur(id);
+
+    if (strcmp(entraineur_courant.id, "Non trouvé") == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Entraîneur non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
+    if (entry_nouv_id) gtk_entry_set_text(GTK_ENTRY(entry_nouv_id), entraineur_courant.id);
+    if (entry_nouv_nom) gtk_entry_set_text(GTK_ENTRY(entry_nouv_nom), entraineur_courant.nom_complet);  // CORRIGÉ: nom_complet
+    if (entry_specialite) gtk_entry_set_text(GTK_ENTRY(entry_specialite), entraineur_courant.specialite);
+    if (entry_email) gtk_entry_set_text(GTK_ENTRY(entry_email), entraineur_courant.email);
+    
+    if (entry_experience && GTK_IS_SPIN_BUTTON(entry_experience)) {
+        int exp;
+        if (sscanf(entraineur_courant.experience, "%d", &exp) == 1) {
+            gtk_spin_button_set_value(GTK_SPIN_BUTTON(entry_experience), exp);
+        } else {
+            gtk_spin_button_set_value(GTK_SPIN_BUTTON(entry_experience), 1);
+        }
+    }
+    
+    if (entry_reseaux) gtk_entry_set_text(GTK_ENTRY(entry_reseaux), entraineur_courant.reseaux_sociaux);
+
+    if (strcmp(entraineur_courant.statut, "complet") == 0) {
+        if (radio_complet) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_complet), TRUE);
+        strcpy(statut_modif, "complet");
+    } else {
+        if (radio_disponible) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_disponible), TRUE);
+        strcpy(statut_modif, "disponible");
+    }
+
+    strcpy(disponibilite_modif, entraineur_courant.disponibilite);
+    if (combo_dispo && GTK_IS_COMBO_BOX(combo_dispo)) {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo_dispo));
+        if (model) {
+            GtkTreeIter iter;
+            gboolean found = FALSE;
+            if (gtk_tree_model_get_iter_first(model, &iter)) {
+                do {
+                    gchar *text;
+                    gtk_tree_model_get(model, &iter, 0, &text, -1);
+                    if (text && strcmp(text, entraineur_courant.disponibilite) == 0) {
+                        gtk_combo_box_set_active_iter(GTK_COMBO_BOX(combo_dispo), &iter);
+                        found = TRUE;
+                    }
+                    g_free(text);
+                    if (found) break;
+                } while (gtk_tree_model_iter_next(model, &iter));
+            }
+            if (!found) {
+                gtk_combo_box_set_active(GTK_COMBO_BOX(combo_dispo), 0);
+            }
+        }
+    }
+
+    strcpy(jours_modif, "");
+    
+    if (check_lundi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_lundi), FALSE);
+    if (check_mardi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mardi), FALSE);
+    if (check_mercredi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mercredi), FALSE);
+    if (check_jeudi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_jeudi), FALSE);
+    if (check_vendredi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_vendredi), FALSE);
+    if (check_samedi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_samedi), FALSE);
+    
+    char jours_copy[100];
+    strcpy(jours_copy, entraineur_courant.jours);
+    char *token = strtok(jours_copy, ",");
+    
+    while (token) {
+        char *clean_token = token;
+        while (*clean_token == ' ') clean_token++;
+        
+        if (strcmp(clean_token, "Lundi") == 0) {
+            if (check_lundi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_lundi), TRUE);
+            if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+            strcat(jours_modif, "Lundi");
+        }
+        else if (strcmp(clean_token, "Mardi") == 0) {
+            if (check_mardi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mardi), TRUE);
+            if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+            strcat(jours_modif, "Mardi");
+        }
+        else if (strcmp(clean_token, "Mercredi") == 0) {
+            if (check_mercredi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mercredi), TRUE);
+            if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+            strcat(jours_modif, "Mercredi");
+        }
+        else if (strcmp(clean_token, "Jeudi") == 0) {
+            if (check_jeudi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_jeudi), TRUE);
+            if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+            strcat(jours_modif, "Jeudi");
+        }
+        else if (strcmp(clean_token, "Vendredi") == 0) {
+            if (check_vendredi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_vendredi), TRUE);
+            if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+            strcat(jours_modif, "Vendredi");
+        }
+        else if (strcmp(clean_token, "Samedi") == 0) {
+            if (check_samedi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_samedi), TRUE);
+            if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+            strcat(jours_modif, "Samedi");
+        }
+        
+        token = strtok(NULL, ",");
+    }
+
+    GtkWidget *dialog = gtk_message_dialog_new(NULL,
+        GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+        "Entraîneur trouvé. Modifiez les champs et cliquez sur 'Appliquer'.");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+
+void on_button_enregistrer_modif_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) return;
+    
+    GtkWidget *entry_id = lookup_widget(window, "entry130");
+    GtkWidget *entry_nouv_id = lookup_widget(window, "entry123");
+    GtkWidget *entry_nouv_nom = lookup_widget(window, "entry124");
+    GtkWidget *entry_specialite = lookup_widget(window, "entry127");
+    GtkWidget *entry_email = lookup_widget(window, "entry126");
+    GtkWidget *entry_experience = lookup_widget(window, "spinbutton2");
+    GtkWidget *entry_reseaux = lookup_widget(window, "entry128");
+    GtkWidget *radio_complet = lookup_widget(window, "radiobutton1");
+    GtkWidget *combo_dispo = lookup_widget(window, "comboboxentry25");
+    GtkWidget *treeview6 = lookup_widget(window, "treeview6");
+    GtkWidget *treeview1000 = lookup_widget(window, "treeview1000");
+
+    // Récupérer les checkbuttons
+    GtkWidget *check_lundi = lookup_widget(window, "lundi_checkbutton7");
+    GtkWidget *check_mardi = lookup_widget(window, "mardi_checkbutton8");
+    GtkWidget *check_mercredi = lookup_widget(window, "mercredi_checkbutton9");
+    GtkWidget *check_jeudi = lookup_widget(window, "jeudi_checkbutton10");
+    GtkWidget *check_vendredi = lookup_widget(window, "vendredi_checkbutton11");
+    GtkWidget *check_samedi = lookup_widget(window, "samedi_checkbutton12");
+
+    if (!entry_id) {
+        g_print("ERROR: entry130 non trouvé\n");
+        return;
+    }
+
+    char id[20];
+    strcpy(id, gtk_entry_get_text(GTK_ENTRY(entry_id)));
+
+    if (strlen(id) == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Aucun ID d'entraîneur spécifié!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
+    // Reconstruire jours_modif
+    strcpy(jours_modif, "");
+    
+    if (check_lundi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_lundi))) {
+        if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+        strcat(jours_modif, "Lundi");
+    }
+    if (check_mardi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_mardi))) {
+        if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+        strcat(jours_modif, "Mardi");
+    }
+    if (check_mercredi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_mercredi))) {
+        if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+        strcat(jours_modif, "Mercredi");
+    }
+    if (check_jeudi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_jeudi))) {
+        if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+        strcat(jours_modif, "Jeudi");
+    }
+    if (check_vendredi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_vendredi))) {
+        if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+        strcat(jours_modif, "Vendredi");
+    }
+    if (check_samedi && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_samedi))) {
+        if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+        strcat(jours_modif, "Samedi");
+    }
+
+    Entraineur nouvelles_info;
+    memset(&nouvelles_info, 0, sizeof(Entraineur));
+    
+    if (entry_nouv_id) {
+        char nouv_id[20];
+        strcpy(nouv_id, gtk_entry_get_text(GTK_ENTRY(entry_nouv_id)));
+        if (strlen(nouv_id) > 0) {
+            strcpy(nouvelles_info.id, nouv_id);
+        } else {
+            strcpy(nouvelles_info.id, id);
+        }
+    } else {
+        strcpy(nouvelles_info.id, id);
+    }
+    
+    // CORRIGÉ: nom_complet
+    if (entry_nouv_nom) {
+        char nom[100];
+        strcpy(nom, gtk_entry_get_text(GTK_ENTRY(entry_nouv_nom)));
+        if (strlen(nom) > 0) {
+            strcpy(nouvelles_info.nom_complet, nom);
+        } else {
+            strcpy(nouvelles_info.nom_complet, entraineur_courant.nom_complet);
+        }
+    } else {
+        strcpy(nouvelles_info.nom_complet, entraineur_courant.nom_complet);
+    }
+    
+    if (entry_specialite) {
+        char spec[50];
+        strcpy(spec, gtk_entry_get_text(GTK_ENTRY(entry_specialite)));
+        if (strlen(spec) > 0) {
+            strcpy(nouvelles_info.specialite, spec);
+        } else {
+            strcpy(nouvelles_info.specialite, entraineur_courant.specialite);
+        }
+    } else {
+        strcpy(nouvelles_info.specialite, entraineur_courant.specialite);
+    }
+    
+    if (entry_email) {
+        char mail[100];
+        strcpy(mail, gtk_entry_get_text(GTK_ENTRY(entry_email)));
+        if (strlen(mail) > 0) {
+            strcpy(nouvelles_info.email, mail);
+        } else {
+            strcpy(nouvelles_info.email, entraineur_courant.email);
+        }
+    } else {
+        strcpy(nouvelles_info.email, entraineur_courant.email);
+    }
+    
+    if (entry_experience && GTK_IS_SPIN_BUTTON(entry_experience)) {
+        int exp = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(entry_experience));
+        snprintf(nouvelles_info.experience, sizeof(nouvelles_info.experience), "%d années", exp);
+    } else {
+        strcpy(nouvelles_info.experience, entraineur_courant.experience);
+    }
+    
+    if (entry_reseaux) {
+        char reseaux[100];
+        strcpy(reseaux, gtk_entry_get_text(GTK_ENTRY(entry_reseaux)));
+        if (strlen(reseaux) > 0) {
+            strcpy(nouvelles_info.reseaux_sociaux, reseaux);
+        } else {
+            strcpy(nouvelles_info.reseaux_sociaux, entraineur_courant.reseaux_sociaux);
+        }
+    } else {
+        strcpy(nouvelles_info.reseaux_sociaux, entraineur_courant.reseaux_sociaux);
+    }
+    
+    if (radio_complet && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_complet))) {
+        strcpy(nouvelles_info.statut, "complet");
+    } else {
+        strcpy(nouvelles_info.statut, "disponible");
+    }
+    
+    if (combo_dispo && GTK_IS_COMBO_BOX(combo_dispo)) {
+        gchar *text = gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo_dispo));
+        if (text) {
+            strcpy(nouvelles_info.disponibilite, text);
+            g_free(text);
+        } else {
+            strcpy(nouvelles_info.disponibilite, disponibilite_modif);
+        }
+    } else {
+        strcpy(nouvelles_info.disponibilite, disponibilite_modif);
+    }
+    
+    strcpy(nouvelles_info.jours, jours_modif);
+
+    modifier_entraineur(id, nouvelles_info);
+
+    // Mettre à jour les TreeViews
+    if (treeview6) afficher_tous_entraineurs(treeview6);
+    if (treeview1000) afficher_tous_entraineurs(treeview1000);
+
+    GtkWidget *dialog = gtk_message_dialog_new(NULL,
+        GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+        "Entraîneur modifié avec succès!");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+
+    strcpy(statut_modif, "disponible");
+    specialite_modif = 1;
+    strcpy(disponibilite_modif, "Matin");
+    strcpy(jours_modif, "");
+    memset(&entraineur_courant, 0, sizeof(Entraineur));
+}
+
+void on_button_supprimer_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) return;
+    
+    GtkWidget *entry_id = lookup_widget(window, "entry131");
+    GtkWidget *treeview6 = lookup_widget(window, "treeview6");
+    GtkWidget *treeview1000 = lookup_widget(window, "treeview1000");
+    
+    if (!entry_id) {
+        g_print("ERROR: Impossible de trouver entry131\n");
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+            "Erreur: Champ ID non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
+    char id[20];
+    strcpy(id, gtk_entry_get_text(GTK_ENTRY(entry_id)));
+   
+    if (strlen(id) == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Veuillez entrer un ID d'entraîneur!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+   
+    Entraineur e = chercher_entraineur(id);
+    if (strcmp(e.id, "Non trouvé") == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Entraîneur non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+   
+    GtkWidget *dialog = gtk_message_dialog_new(NULL,
+        GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO,
+        "Êtes-vous sûr de vouloir supprimer l'entraîneur %s (%s)?", id, e.nom_complet);
+   
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+   
+    if (response == GTK_RESPONSE_YES) {
+        supprimer_entraineur(id);
+       
+        if (treeview6) afficher_tous_entraineurs(treeview6);
+        if (treeview1000) afficher_tous_entraineurs(treeview1000);
+       
+        dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+            "Entraîneur supprimé avec succès!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+       
+        gtk_entry_set_text(GTK_ENTRY(entry_id), "");
+    }
+}
+
+void on_button_afficher_tous_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) return;
+    
+    GtkWidget *treeview = lookup_widget(window, "treeview6");
+    if (treeview) {
+        afficher_tous_entraineurs(treeview);
+    }
+}
+
+void on_spinbutton_experience_value_changed(GtkSpinButton *spinbutton, gpointer user_data) {
+    experience_ajout = gtk_spin_button_get_value_as_int(spinbutton);
+}
+
+void on_spinbutton_specialite_value_changed(GtkSpinButton *spinbutton, gpointer user_data) {
+    specialite_ajout = gtk_spin_button_get_value_as_int(spinbutton);
+}
+
+void on_spinbutton_experience2_value_changed(GtkSpinButton *spinbutton, gpointer user_data) {
+    experience_modif = gtk_spin_button_get_value_as_int(spinbutton);
+}
+
+void on_spinbutton_specialite2_value_changed(GtkSpinButton *spinbutton, gpointer user_data) {
+    specialite_modif = gtk_spin_button_get_value_as_int(spinbutton);
+}
+
+void on_ajout_button95_clicked(GtkWidget *button, gpointer user_data) {
+    on_button_ajouter_clicked(button, user_data);
+}
+
+void on_button96_clicked(GtkWidget *button, gpointer user_data) {
+    on_button_enregistrer_modif_clicked(button, user_data);
+}
+
+void on_button97_clicked(GtkWidget *button, gpointer user_data) {
+    on_button_supprimer_clicked(button, user_data);
+}
+
+void on_spinbutton1_changed(GtkSpinButton *spinbutton, gpointer user_data) {
+    on_spinbutton_experience_value_changed(spinbutton, user_data);
+}
+
+void on_spinbutton2_changed(GtkSpinButton *spinbutton, gpointer user_data) {
+    on_spinbutton_experience2_value_changed(spinbutton, user_data);
+}
+
+void on_ajout_dispo_comboboxentry23_changed(GtkComboBox *combobox, gpointer user_data) {
+    gchar *text = gtk_combo_box_get_active_text(combobox);
+    if (text) {
+        strcpy(disponibilite_ajout, text);
+        g_free(text);
+    }
+}
+
+void on_comboboxentry25_changed(GtkComboBox *combobox, gpointer user_data) {
+    gchar *text = gtk_combo_box_get_active_text(combobox);
+    if (text) {
+        strcpy(disponibilite_modif, text);
+        g_free(text);
+    }
+}
+
+// ==================== CORRECTION : DOUBLE-CLIC SUPPRESSION ====================
+void on_treeview6_row_activated(GtkTreeView *treeview, GtkTreePath *path,
+                                 GtkTreeViewColumn *column, gpointer user_data) {
+    printf("DEBUG: Double-clic détecté sur treeview6!\n");
+    
+    GtkTreeModel *model;
+    GtkTreeIter iter;  // <-- AJOUTER CETTE LIGNE
+    char *id = NULL;
+    char *nom = NULL;
+    
+    model = gtk_tree_view_get_model(treeview);
+    
+    if (!model || !GTK_IS_TREE_MODEL(model)) {
+        printf("DEBUG: Modèle invalide!\n");
+        return;
+    }
+    
+    if (!gtk_tree_model_get_iter(model, &iter, path)) {
+        printf("DEBUG: Impossible de récupérer l'itérateur!\n");
+        return;
+    }
+    
+    // Récupérer l'ID et le nom (colonne 0 et 1)
+    gtk_tree_model_get(model, &iter, 0, &id, 1, &nom, -1);
+    
+    printf("DEBUG: ID récupéré: %s\n", id ? id : "NULL");
+    printf("DEBUG: Nom récupéré: %s\n", nom ? nom : "NULL");
+    
+    if (id && strlen(id) > 0) {
+        // Demander confirmation
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, 
+            GTK_MESSAGE_QUESTION, 
+            GTK_BUTTONS_YES_NO,
+            "Supprimer l'entraîneur %s (%s) ?", 
+            id, 
+            nom ? nom : "Sans nom");
+        
+        gtk_window_set_title(GTK_WINDOW(dialog), "Confirmation");
+        
+        gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        
+        if (response == GTK_RESPONSE_YES) {
+            printf("DEBUG: Suppression confirmée pour ID: %s\n", id);
+            supprimer_entraineur(id);
+            
+            // Mettre à jour les TreeViews
+            GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(treeview));
+            if (window) {
+                GtkWidget *treeview1000 = lookup_widget(window, "treeview1000");
+                GtkWidget *treeview6 = lookup_widget(window, "treeview6");
+                
+                if (treeview1000) {
+                    printf("DEBUG: Mise à jour de treeview1000\n");
+                    afficher_tous_entraineurs(treeview1000);
+                }
+                if (treeview6) {
+                    printf("DEBUG: Mise à jour de treeview6\n");
+                    afficher_tous_entraineurs(treeview6);
+                }
+            }
+            
+            // Message de confirmation
+            dialog = gtk_message_dialog_new(NULL,
+                GTK_DIALOG_MODAL, 
+                GTK_MESSAGE_INFO, 
+                GTK_BUTTONS_OK,
+                "Entraîneur %s supprimé!", 
+                id);
+            gtk_window_set_title(GTK_WINDOW(dialog), "Succès");
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+        } else {
+            printf("DEBUG: Suppression annulée\n");
+        }
+        
+        if (id) g_free(id);
+        if (nom) g_free(nom);
+    } else {
+        printf("DEBUG: ID invalide ou vide!\n");
+    }
+}
+// ==================== RECHERCHE DANS L'ONGLET "MODIFIER" ====================
+void on_rechercher_id_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) return;
+    
+    // CORRECTION: Le bon entry pour la recherche dans l'onglet "Modifier" est "entry130"
+    GtkWidget *entry_id = lookup_widget(window, "entry130");
+    if (!entry_id) {
+        g_print("ERROR: Impossible de trouver entry130\n");
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+            "Erreur: Champ ID non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id));
+    if (!id_text || strlen(id_text) == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Veuillez entrer un ID d'entraîneur!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    char id[20];
+    strncpy(id, id_text, sizeof(id)-1);
+    
+    // Chercher l'entraîneur
+    Entraineur e = chercher_entraineur(id);
+    
+    if (strcmp(e.id, "Non trouvé") == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Entraîneur non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    // Récupérer tous les widgets
+    GtkWidget *entry_nouv_id = lookup_widget(window, "entry123");
+    GtkWidget *entry_nouv_nom = lookup_widget(window, "entry124");
+    GtkWidget *spin_experience = lookup_widget(window, "spinbutton2");
+    GtkWidget *entry_email = lookup_widget(window, "entry126");
+    GtkWidget *entry_specialite = lookup_widget(window, "entry127");
+    GtkWidget *entry_reseaux = lookup_widget(window, "entry128");
+    GtkWidget *radio_complet = lookup_widget(window, "radiobutton1");
+    GtkWidget *radio_disponible = lookup_widget(window, "radiobutton2");
+    GtkWidget *combo_dispo = lookup_widget(window, "comboboxentry25");
+    
+    // Checkbuttons
+    GtkWidget *check_lundi = lookup_widget(window, "lundi_checkbutton7");
+    GtkWidget *check_mardi = lookup_widget(window, "mardi_checkbutton8");
+    GtkWidget *check_mercredi = lookup_widget(window, "mercredi_checkbutton9");
+    GtkWidget *check_jeudi = lookup_widget(window, "jeudi_checkbutton10");
+    GtkWidget *check_vendredi = lookup_widget(window, "vendredi_checkbutton11");
+    GtkWidget *check_samedi = lookup_widget(window, "samedi_checkbutton12");
+    
+    // Remplir les champs
+    if (entry_nouv_id) gtk_entry_set_text(GTK_ENTRY(entry_nouv_id), e.id);
+    
+    if (entry_nouv_nom) gtk_entry_set_text(GTK_ENTRY(entry_nouv_nom), e.nom_complet);
+    
+    if (spin_experience && GTK_IS_SPIN_BUTTON(spin_experience)) {
+        int exp_value = 1;
+        if (sscanf(e.experience, "%d", &exp_value) == 1) {
+            gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_experience), (gdouble)exp_value);
+        } else {
+            gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_experience), 1);
+        }
+    }
+    
+    if (entry_email) gtk_entry_set_text(GTK_ENTRY(entry_email), e.email);
+    
+    if (entry_specialite) gtk_entry_set_text(GTK_ENTRY(entry_specialite), e.specialite);
+    
+    if (entry_reseaux) gtk_entry_set_text(GTK_ENTRY(entry_reseaux), e.reseaux_sociaux);
+    
+    if (strcmp(e.statut, "complet") == 0) {
+        if (radio_complet) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_complet), TRUE);
+    } else {
+        if (radio_disponible) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_disponible), TRUE);
+    }
+    
+    if (combo_dispo && GTK_IS_COMBO_BOX(combo_dispo)) {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo_dispo));
+        if (model) {
+            GtkTreeIter iter;
+            gboolean found = FALSE;
+            gboolean has_iter = gtk_tree_model_get_iter_first(model, &iter);
+            
+            while (has_iter) {
+                gchar *text;
+                gtk_tree_model_get(model, &iter, 0, &text, -1);
+                
+                if (text && strcmp(text, e.disponibilite) == 0) {
+                    gtk_combo_box_set_active_iter(GTK_COMBO_BOX(combo_dispo), &iter);
+                    found = TRUE;
+                    break;
+                }
+                
+                g_free(text);
+                has_iter = gtk_tree_model_iter_next(model, &iter);
+            }
+            
+            if (!found) {
+                GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(combo_dispo)));
+                if (entry) {
+                    gtk_entry_set_text(entry, e.disponibilite);
+                }
+            }
+        }
+    }
+    
+    strcpy(jours_modif, "");
+    
+    // Décocher tous d'abord
+    if (check_lundi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_lundi), FALSE);
+    if (check_mardi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mardi), FALSE);
+    if (check_mercredi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mercredi), FALSE);
+    if (check_jeudi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_jeudi), FALSE);
+    if (check_vendredi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_vendredi), FALSE);
+    if (check_samedi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_samedi), FALSE);
+    
+    // Cocher ceux qui sont dans la liste
+    if (strlen(e.jours) > 0) {
+        char jours_copy[100];
+        strcpy(jours_copy, e.jours);
+        char *token = strtok(jours_copy, ",");
+        
+        while (token) {
+            char *clean_token = token;
+            while (*clean_token == ' ') clean_token++;
+            
+            if (strcmp(clean_token, "Lundi") == 0 && check_lundi) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_lundi), TRUE);
+                if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+                strcat(jours_modif, "Lundi");
+            }
+            else if (strcmp(clean_token, "Mardi") == 0 && check_mardi) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mardi), TRUE);
+                if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+                strcat(jours_modif, "Mardi");
+            }
+            else if (strcmp(clean_token, "Mercredi") == 0 && check_mercredi) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_mercredi), TRUE);
+                if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+                strcat(jours_modif, "Mercredi");
+            }
+            else if (strcmp(clean_token, "Jeudi") == 0 && check_jeudi) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_jeudi), TRUE);
+                if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+                strcat(jours_modif, "Jeudi");
+            }
+            else if (strcmp(clean_token, "Vendredi") == 0 && check_vendredi) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_vendredi), TRUE);
+                if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+                strcat(jours_modif, "Vendredi");
+            }
+            else if (strcmp(clean_token, "Samedi") == 0 && check_samedi) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_samedi), TRUE);
+                if (strlen(jours_modif) > 0) strcat(jours_modif, ",");
+                strcat(jours_modif, "Samedi");
+            }
+            
+            token = strtok(NULL, ",");
+        }
+    }
+    
+    // Sauvegarder
+    memcpy(&entraineur_courant, &e, sizeof(Entraineur));
+    
+    GtkWidget *dialog = gtk_message_dialog_new(NULL,
+        GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+        "Entraîneur trouvé! Les champs sont remplis.");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+// ==================== RECHERCHE DANS L'ONGLET "RECHERCHER" ====================
+void on_button98_clicked(GtkWidget *button, gpointer user_data) {
+    g_print("DEBUG: Bouton recherche (onglet Rechercher) cliqué!\n");
+    
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) {
+        g_print("DEBUG: Window non trouvée!\n");
+        return;
+    }
+    
+    // Le bouton avec loupe dans l'onglet "Rechercher" recherche dans entry132
+    GtkWidget *entry_id = lookup_widget(window, "entry132");
+    if (!entry_id) {
+        g_print("DEBUG: entry132 non trouvé!\n");
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+            "Erreur: Champ de recherche non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    GtkWidget *treeview1000 = lookup_widget(window, "treeview1000");
+    if (!treeview1000) {
+        g_print("DEBUG: treeview1000 non trouvé!\n");
+        return;
+    }
+    
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id));
+    g_print("DEBUG: ID saisi: '%s'\n", id_text ? id_text : "NULL");
+    
+    char id[20];
+    strncpy(id, id_text ? id_text : "", sizeof(id)-1);
+    id[sizeof(id)-1] = '\0';
+    
+    if (strlen(id) == 0) {
+        g_print("DEBUG: Champ vide, afficher tous\n");
+        // Si champ vide, afficher tous les entraîneurs
+        afficher_tous_entraineurs(treeview1000);
+        return;
+    }
+    
+    g_print("DEBUG: Recherche de l'ID: %s\n", id);
+    Entraineur e = chercher_entraineur(id);
+    
+    if (strcmp(e.id, "Non trouvé") == 0) {
+        g_print("DEBUG: Entraîneur non trouvé\n");
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Entraîneur non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        
+        // Vider le TreeView
+        GtkListStore *store = gtk_list_store_new(8,
+            G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+            G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+            G_TYPE_STRING, G_TYPE_STRING);
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview1000), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+    } else {
+        g_print("DEBUG: Entraîneur trouvé: %s - %s\n", e.id, e.nom_complet);
+        
+        // Configurer les colonnes si nécessaire
+        GList *columns = gtk_tree_view_get_columns(GTK_TREE_VIEW(treeview1000));
+        if (columns == NULL) {
+            configurer_columns_treeview(treeview1000);
+        }
+        if (columns) g_list_free(columns);
+        
+        // Afficher l'entraîneur trouvé
+        GtkListStore *store;
+        GtkTreeIter iter;
+        
+        store = gtk_list_store_new(8,
+            G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+            G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+            G_TYPE_STRING, G_TYPE_STRING);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+            0, e.id,
+            1, e.nom_complet,
+            2, e.specialite,
+            3, e.email,
+            4, e.experience,
+            5, e.reseaux_sociaux,
+            6, e.statut,
+            7, e.jours,
+            -1);
+        
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview1000), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        g_print("DEBUG: Entraîneur affiché dans treeview1000\n");
+    }
+}
+
+
+
+void on_button51_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    if (!window) return;
+    
+    // Récupérer tous les widgets
+    GtkWidget *entry_nom = lookup_widget(window, "entry51");
+    GtkWidget *entry_id = lookup_widget(window, "entry52");
+    GtkWidget *combo_cours = lookup_widget(window, "comboboxentry9");
+    GtkWidget *combo_horaire = lookup_widget(window, "comboboxentry10");
+    GtkWidget *combo_prix = lookup_widget(window, "comboboxentry11");
+    GtkWidget *entry_salle = lookup_widget(window, "entry43");
+    
+    if (!entry_nom || !entry_id || !combo_cours || !combo_horaire || !combo_prix) {
+        g_print("ERROR: Widgets non trouvés\n");
+        return;
+    }
+    
+    const gchar *nom_text = gtk_entry_get_text(GTK_ENTRY(entry_nom));
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id));
+    gchar *cours_text = gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo_cours));
+    gchar *horaire_text = gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo_horaire));
+    gchar *prix_text = gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo_prix));
+    const gchar *salle_text = gtk_entry_get_text(GTK_ENTRY(entry_salle));
+    
+    // Validation
+    if (!nom_text || strlen(nom_text) == 0 || 
+        !id_text || strlen(id_text) == 0 ||
+        !cours_text || !horaire_text || !prix_text) {
+        
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Tous les champs sont obligatoires!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        
+        if (cours_text) g_free(cours_text);
+        if (horaire_text) g_free(horaire_text);
+        if (prix_text) g_free(prix_text);
+        return;
+    }
+    
+    Inscription i;
+    memset(&i, 0, sizeof(Inscription));
+    
+    strncpy(i.nom_complet, nom_text, sizeof(i.nom_complet)-1);
+    strncpy(i.identifiant, id_text, sizeof(i.identifiant)-1);
+    strncpy(i.cours, cours_text, sizeof(i.cours)-1);
+    strncpy(i.horaire, horaire_text, sizeof(i.horaire)-1);
+    strncpy(i.prix, prix_text, sizeof(i.prix)-1);
+    
+    if (salle_text) {
+        strncpy(i.salle, salle_text, sizeof(i.salle)-1);
+    } else {
+        strcpy(i.salle, "");
+    }
+    
+    // Debug
+    g_print("\n=== INSCRIPTION ===\n");
+    g_print("Nom: %s\n", i.nom_complet);
+    g_print("ID: %s\n", i.identifiant);
+    g_print("Cours: %s\n", i.cours);
+    g_print("Horaire: %s\n", i.horaire);
+    g_print("Prix: %s\n", i.prix);
+    g_print("Salle: %s\n", i.salle);
+    g_print("================\n");
+    
+    enregistrer_inscription(i);
+    
+    GtkWidget *dialog = gtk_message_dialog_new(NULL,
+        GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+        "Inscription enregistrée avec succès!");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+    
+    gtk_entry_set_text(GTK_ENTRY(entry_nom), "");
+    gtk_entry_set_text(GTK_ENTRY(entry_id), "");
+    gtk_entry_set_text(GTK_ENTRY(entry_salle), "");
+    
+    if (cours_text) g_free(cours_text);
+    if (horaire_text) g_free(horaire_text);
+    if (prix_text) g_free(prix_text);
+}
+// callbacks.c - Ajouter ces fonctions
+
+
+void on_button_valider_client100_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) return;
+    
+    GtkWidget *entry_id = lookup_widget(window, "entry45");
+    if (!entry_id) {
+        g_print("ERROR: Entry ID non trouvé\n");
+        return;
+    }
+    
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id));
+    if (!id_text || strlen(id_text) == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Aucun ID d'entraîneur spécifié!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    GtkWidget *treeview = lookup_widget(window, "treeview_list_client3");
+    if (!treeview) {
+        g_print("ERROR: Treeview clients non trouvé\n");
+        return;
+    }
+    
+    sauvegarder_progression_clients(treeview, id_text);
+    
+    GtkWidget *dialog = gtk_message_dialog_new(NULL,
+        GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+        "Progression des clients sauvegardée!");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+
+void on_button_valider_emplois101_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window) return;
+    
+    GtkWidget *entry_id = lookup_widget(window, "entry45");
+    if (!entry_id) {
+        g_print("ERROR: Entry ID non trouvé\n");
+        return;
+    }
+    
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id));
+    if (!id_text || strlen(id_text) == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL,
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Aucun ID d'entraîneur spécifié!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    GtkWidget *treeview = lookup_widget(window, "treeview_emploit4");
+    if (!treeview) {
+        g_print("ERROR: Treeview emploi non trouvé\n");
+        return;
+    }
+    
+    sauvegarder_emploi_entraineur(treeview, id_text);
+    
+    GtkWidget *dialog = gtk_message_dialog_new(NULL,
+        GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+        "Emploi du temps sauvegardé!");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+void on_button99_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(button);
+    if (!window || !GTK_IS_WINDOW(window)) {
+        g_print("ERROR: Fenêtre parente non trouvée\n");
+        return;
+    }
+    
+    // Récupérer les champs
+    GtkWidget *entry_nom = lookup_widget(window, "entry133");
+    GtkWidget *entry_id = lookup_widget(window, "entry134");
+    
+    if (!entry_nom || !GTK_IS_ENTRY(entry_nom)) {
+        g_print("ERROR: entry133 non trouvé ou invalide\n");
+        return;
+    }
+    if (!entry_id || !GTK_IS_ENTRY(entry_id)) {
+        g_print("ERROR: entry134 non trouvé ou invalide\n");
+        return;
+    }
+    
+    const gchar *nom_text = gtk_entry_get_text(GTK_ENTRY(entry_nom));
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id));
+    
+    g_print("DEBUG: Tentative de login - Nom: %s, ID: %s\n", 
+            nom_text ? nom_text : "NULL", 
+            id_text ? id_text : "NULL");
+    
+    if (!nom_text || strlen(nom_text) == 0 || !id_text || strlen(id_text) == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Veuillez entrer le nom et l'identifiant!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    // Vérifier si l'entraîneur existe
+    Entraineur e = chercher_entraineur(id_text);
+    g_print("DEBUG: Recherche entraîneur ID %s - Résultat: %s\n", 
+            id_text, strcmp(e.id, "Non trouvé") == 0 ? "Non trouvé" : "Trouvé");
+    
+    if (strcmp(e.id, "Non trouvé") == 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Entraîneur non trouvé!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    // Vérifier si le nom correspond (partiellement ou complètement)
+    if (strstr(e.nom_complet, nom_text) == NULL && strcmp(e.nom_complet, nom_text) != 0) {
+        GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+            GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK,
+            "Nom ou identifiant incorrect!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    
+    g_print("DEBUG: Login réussi! Ouverture du profil...\n");
+    
+    // Afficher la fenêtre de profil
+    afficher_profile_entraineur(e.nom_complet, id_text);
+    
+    // Fermer la fenêtre de login
+    gtk_widget_destroy(window);
+    
+    g_print("DEBUG: Fenêtre login fermée\n");
+}
 

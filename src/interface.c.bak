@@ -1408,7 +1408,6 @@ create_acceuiladmin (void)
 {
   GtkWidget *acceuiladmin;
   GtkWidget *fixed11;
-  GtkWidget *button18;
   GtkWidget *button19;
   GtkWidget *button20;
   GtkWidget *label65;
@@ -1417,6 +1416,7 @@ create_acceuiladmin (void)
   GtkWidget *membre;
   GtkWidget *home3;
   GtkWidget *image20;
+  GtkWidget *centre;
 
   acceuiladmin = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title (GTK_WINDOW (acceuiladmin), _("acceuiladmin"));
@@ -1424,11 +1424,6 @@ create_acceuiladmin (void)
   fixed11 = gtk_fixed_new ();
   gtk_widget_show (fixed11);
   gtk_container_add (GTK_CONTAINER (acceuiladmin), fixed11);
-
-  button18 = gtk_button_new_with_mnemonic (_("GESTION DES CENTRES"));
-  gtk_widget_show (button18);
-  gtk_fixed_put (GTK_FIXED (fixed11), button18, 64, 592);
-  gtk_widget_set_size_request (button18, 464, 208);
 
   button19 = gtk_button_new_with_mnemonic (_("GESTION DES EVENEMENTS"));
   gtk_widget_show (button19);
@@ -1469,17 +1464,24 @@ create_acceuiladmin (void)
   gtk_widget_show (image20);
   gtk_container_add (GTK_CONTAINER (home3), image20);
 
+  centre = gtk_button_new_with_mnemonic (_("GESTION DES CENTRES"));
+  gtk_widget_show (centre);
+  gtk_fixed_put (GTK_FIXED (fixed11), centre, 64, 592);
+  gtk_widget_set_size_request (centre, 464, 208);
+
   g_signal_connect ((gpointer) membre, "clicked",
                     G_CALLBACK (on_membre_clicked),
                     NULL);
   g_signal_connect ((gpointer) home3, "clicked",
                     G_CALLBACK (on_home3_clicked),
                     NULL);
+  g_signal_connect ((gpointer) centre, "clicked",
+                    G_CALLBACK (on_centre_clicked),
+                    NULL);
 
   /* Store pointers to all widgets, for use by lookup_widget(). */
   GLADE_HOOKUP_OBJECT_NO_REF (acceuiladmin, acceuiladmin, "acceuiladmin");
   GLADE_HOOKUP_OBJECT (acceuiladmin, fixed11, "fixed11");
-  GLADE_HOOKUP_OBJECT (acceuiladmin, button18, "button18");
   GLADE_HOOKUP_OBJECT (acceuiladmin, button19, "button19");
   GLADE_HOOKUP_OBJECT (acceuiladmin, button20, "button20");
   GLADE_HOOKUP_OBJECT (acceuiladmin, label65, "label65");
@@ -1488,6 +1490,7 @@ create_acceuiladmin (void)
   GLADE_HOOKUP_OBJECT (acceuiladmin, membre, "membre");
   GLADE_HOOKUP_OBJECT (acceuiladmin, home3, "home3");
   GLADE_HOOKUP_OBJECT (acceuiladmin, image20, "image20");
+  GLADE_HOOKUP_OBJECT (acceuiladmin, centre, "centre");
 
   return acceuiladmin;
 }
@@ -2860,4 +2863,3 @@ create_window2 (void)
 
   return window2;
 }
-

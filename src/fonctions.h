@@ -115,4 +115,60 @@ int ajouterInscription(char *filename, inscription ins);
 int verifierInscriptionExiste(char *filename, int id_centre, int id_coach, char *date);
 int genererIdInscription();
 void afficherInscriptions(char *filename);
+//entraineur
+typedef struct {
+    char id[20];
+    char nom_complet[100];      // CHANGÉ: nom et prénom ensemble
+    char specialite[50];
+    char email[100];
+    char experience[50];
+    char reseaux_sociaux[100];
+    char statut[20];
+    char jours[100];
+    char disponibilite[50];
+} Entraineur;
+
+Entraineur chercher_entraineur(const char *id);
+void ajouter_entraineur(Entraineur e);
+void modifier_entraineur(const char *id, Entraineur nouvelles_info);
+void supprimer_entraineur(const char *id);
+void vider_treeview(GtkWidget *treeview);
+void afficher_tous_entraineurs(GtkWidget *treeview);
+void configurer_columns_treeview(GtkWidget *treeview);
+
+typedef struct {
+    char nom_complet[100];
+    char identifiant[20];
+    char cours[50];
+    char horaire[50];
+    char prix[20];
+    char salle[50];
+} Inscription;
+
+void enregistrer_inscription(Inscription i);
+
+typedef struct {
+    int cardio;
+    int dance;
+    int musculation;
+    int boxe;
+    int gymnastique;
+} Specialites;
+
+// Fonctions pour le profil d'entraîneur
+void configurer_columns_profile_client(GtkWidget *treeview);
+void configurer_columns_profile_emploi(GtkWidget *treeview);
+
+void charger_clients_entraineur(GtkWidget *treeview, const char *entraineur_id);
+void charger_emploi_entraineur(GtkWidget *treeview, const char *entraineur_id);
+
+void sauvegarder_progression_clients(GtkWidget *treeview, const char *entraineur_id);
+void sauvegarder_emploi_entraineur(GtkWidget *treeview, const char *entraineur_id);
+
+void afficher_profile_entraineur(const char *nom, const char *id);
+
+// Fonctions utilitaires
+void parser_specialites(const char *specialite_str, Specialites *spec);
+int correspond_specialites(const char *objectifs_str, const Specialites *spec_entraineur);
+
 #endif

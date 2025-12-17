@@ -1267,3 +1267,1104 @@ void afficherInscriptions(char *filename) {
         fclose(f);
     }
 }
+//entraineurs
+
+Entraineur chercher_entraineur(const char *id) {
+    Entraineur e;
+    memset(&e, 0, sizeof(Entraineur));
+    
+    FILE *f = fopen("entraineurs.txt", "r");
+    char ligne[500];
+   
+    if (f != NULL) {
+        while (fgets(ligne, sizeof(ligne), f)) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) > 0) {
+                char *token;
+                int field = 0;
+                char ligne_copy[500];
+                strcpy(ligne_copy, ligne);
+                
+                token = strtok(ligne_copy, "|");
+                while (token != NULL && field < 9) {  // CHANGÉ: 9 champs au lieu de 10
+                    switch(field) {
+                        case 0: strncpy(e.id, token, sizeof(e.id)-1); break;
+                        case 1: strncpy(e.nom_complet, token, sizeof(e.nom_complet)-1); break;  // CHANGÉ
+                        case 2: strncpy(e.specialite, token, sizeof(e.specialite)-1); break;
+                        case 3: strncpy(e.email, token, sizeof(e.email)-1); break;
+                        case 4: strncpy(e.experience, token, sizeof(e.experience)-1); break;
+                        case 5: strncpy(e.reseaux_sociaux, token, sizeof(e.reseaux_sociaux)-1); break;
+                        case 6: strncpy(e.statut, token, sizeof(e.statut)-1); break;
+                        case 7: strncpy(e.jours, token, sizeof(e.jours)-1); break;
+                        case 8: strncpy(e.disponibilite, token, sizeof(e.disponibilite)-1); break;
+                    }
+                    field++;
+                    token = strtok(NULL, "|");
+                }
+                
+                if (strcmp(e.id, id) == 0) {
+                    fclose(f);
+                    return e;
+                }
+            }
+            memset(&e, 0, sizeof(Entraineur));
+        }
+        fclose(f);
+    }
+    
+    strcpy(e.id, "Non trouvé");
+    return e;
+}
+void ajouter_entraineur(Entraineur e) {
+    FILE *f = fopen("entraineurs.txt", "a");
+    if (f != NULL) {
+        // CHANGÉ: 9 champs au lieu de 10
+        fprintf(f, "%s|%s|%s|%s|%s|%s|%s|%s|%s\n",
+                e.id, e.nom_complet, e.specialite, e.email,
+                e.experience, e.reseaux_sociaux, e.statut, e.jours, e.disponibilite);
+        fclose(f);
+    } else {
+        f = fopen("entraineurs.txt", "w");
+        if (f != NULL) {
+            fprintf(f, "%s|%s|%s|%s|%s|%s|%s|%s|%s\n",
+                    e.id, e.nom_complet, e.specialite, e.email,
+                    e.experience, e.reseaux_sociaux, e.statut, e.jours, e.disponibilite);
+            fclose(f);
+        }
+    }
+}
+
+void modifier_entraineur(const char *id, Entraineur nouvelles_info) {
+    FILE *f = fopen("entraineurs.txt", "r");
+    FILE *temp = fopen("temp.txt", "w");
+    char ligne[500];
+    Entraineur e;
+    int trouve = 0;
+   
+    if (f != NULL && temp != NULL) {
+        while (fgets(ligne, sizeof(ligne), f)) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) > 0) {
+                memset(&e, 0, sizeof(Entraineur));
+                char *token;
+                int field = 0;
+                char ligne_copy[500];
+                strcpy(ligne_copy, ligne);
+                
+                token = strtok(ligne_copy, "|");
+                while (token != NULL && field < 9) {  // CHANGÉ: 9 champs
+                    if (field == 0) strncpy(e.id, token, sizeof(e.id)-1);
+                    field++;
+                    token = strtok(NULL, "|");
+                }
+                
+                if (strcmp(e.id, id) == 0) {
+                    // CHANGÉ: 9 champs
+                    fprintf(temp, "%s|%s|%s|%s|%s|%s|%s|%s|%s\n",
+                            nouvelles_info.id, nouvelles_info.nom_complet,
+                            nouvelles_info.specialite, nouvelles_info.email,
+                            nouvelles_info.experience, nouvelles_info.reseaux_sociaux,
+                            nouvelles_info.statut, nouvelles_info.jours, nouvelles_info.disponibilite);
+                    trouve = 1;
+                } else {
+                    fprintf(temp, "%s\n", ligne);
+                }
+            }
+        }
+       
+        fclose(f);
+        fclose(temp);
+       
+        if (trouve) {
+            remove("entraineurs.txt");
+            rename("temp.txt", "entraineurs.txt");
+        } else {
+            remove("temp.txt");
+        }
+    } else {
+        if (f) fclose(f);
+        if (temp) {
+            fclose(temp);
+            remove("temp.txt");
+        }
+    }
+}
+void supprimer_entraineur(const char *id) {
+    FILE *f = fopen("entraineurs.txt", "r");
+    FILE *temp = fopen("temp.txt", "w");
+    char ligne[500];
+    Entraineur e;
+    int trouve = 0;
+   
+    if (f != NULL && temp != NULL) {
+        while (fgets(ligne, sizeof(ligne), f)) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) > 0) {
+                memset(&e, 0, sizeof(Entraineur));
+                char *token;
+                int field = 0;
+                char ligne_copy[500];
+                strcpy(ligne_copy, ligne);
+                
+                token = strtok(ligne_copy, "|");
+                while (token != NULL && field < 10) {
+                    if (field == 0) strncpy(e.id, token, sizeof(e.id)-1);
+                    field++;
+                    token = strtok(NULL, "|");
+                }
+                
+                if (strcmp(e.id, id) != 0) {
+                    fprintf(temp, "%s\n", ligne);
+                } else {
+                    trouve = 1;
+                }
+            }
+        }
+       
+        fclose(f);
+        fclose(temp);
+       
+        if (trouve) {
+            remove("entraineurs.txt");
+            rename("temp.txt", "entraineurs.txt");
+        } else {
+            remove("temp.txt");
+        }
+    } else {
+        if (f) fclose(f);
+        if (temp) {
+            fclose(temp);
+            remove("temp.txt");
+        }
+    }
+}
+
+void vider_treeview(GtkWidget *treeview) {
+    if (!treeview || !GTK_IS_TREE_VIEW(treeview)) return;
+    
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    if (model && GTK_IS_LIST_STORE(model)) {
+        gtk_list_store_clear(GTK_LIST_STORE(model));
+    }
+}
+
+void configurer_columns_treeview(GtkWidget *treeview) {
+    if (!treeview || !GTK_IS_TREE_VIEW(treeview)) return;
+    
+    GList *columns = gtk_tree_view_get_columns(GTK_TREE_VIEW(treeview));
+    GList *iter = columns;
+    while (iter) {
+        gtk_tree_view_remove_column(GTK_TREE_VIEW(treeview), GTK_TREE_VIEW_COLUMN(iter->data));
+        iter = iter->next;
+    }
+    g_list_free(columns);
+    
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+    
+    // CHANGÉ: 8 colonnes
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("ID", renderer, "text", 0, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Nom", renderer, "text", 1, NULL);  // CHANGÉ: nom_complet
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Spécialité", renderer, "text", 2, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Email", renderer, "text", 3, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Expérience", renderer, "text", 4, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Réseaux", renderer, "text", 5, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Statut", renderer, "text", 6, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Jours", renderer, "text", 7, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // CHANGÉ: Supprimé la colonne "Disponibilité" pour avoir 8 colonnes
+}
+void afficher_tous_entraineurs(GtkWidget *treeview) {
+    if (!treeview || !GTK_IS_TREE_VIEW(treeview)) return;
+    
+    GList *columns = gtk_tree_view_get_columns(GTK_TREE_VIEW(treeview));
+    if (columns == NULL) {
+        configurer_columns_treeview(treeview);
+    }
+    if (columns) g_list_free(columns);
+    
+    GtkTreeIter iter;
+    GtkListStore *store;
+    FILE *f;
+    char ligne[500];
+   
+    // CHANGÉ: 8 colonnes au lieu de 9 (pas de pronom)
+    store = gtk_list_store_new(8,
+        G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+        G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+        G_TYPE_STRING, G_TYPE_STRING);
+    
+    gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), GTK_TREE_MODEL(store));
+    g_object_unref(store);
+   
+    f = fopen("entraineurs.txt", "r");
+    if (f != NULL) {
+        while (fgets(ligne, sizeof(ligne), f)) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) > 0) {
+                Entraineur e;
+                memset(&e, 0, sizeof(Entraineur));
+                
+                char *token;
+                int field = 0;
+                char ligne_copy[500];
+                strcpy(ligne_copy, ligne);
+                
+                token = strtok(ligne_copy, "|");
+                while (token != NULL && field < 9) {  // CHANGÉ: 9 champs
+                    switch(field) {
+                        case 0: strncpy(e.id, token, sizeof(e.id)-1); break;
+                        case 1: strncpy(e.nom_complet, token, sizeof(e.nom_complet)-1); break;  // CHANGÉ
+                        case 2: strncpy(e.specialite, token, sizeof(e.specialite)-1); break;
+                        case 3: strncpy(e.email, token, sizeof(e.email)-1); break;
+                        case 4: strncpy(e.experience, token, sizeof(e.experience)-1); break;
+                        case 5: strncpy(e.reseaux_sociaux, token, sizeof(e.reseaux_sociaux)-1); break;
+                        case 6: strncpy(e.statut, token, sizeof(e.statut)-1); break;
+                        case 7: strncpy(e.jours, token, sizeof(e.jours)-1); break;
+                        case 8: strncpy(e.disponibilite, token, sizeof(e.disponibilite)-1); break;
+                    }
+                    field++;
+                    token = strtok(NULL, "|");
+                }
+                
+                if (strlen(e.id) > 0) {
+                    gtk_list_store_append(store, &iter);
+                    // CHANGÉ: nom_complet au lieu de nom
+                    gtk_list_store_set(store, &iter,
+                        0, e.id,
+                        1, e.nom_complet,      // CHANGÉ
+                        2, e.specialite,
+                        3, e.email,
+                        4, e.experience,
+                        5, e.reseaux_sociaux,
+                        6, e.statut,
+                        7, e.jours,
+                        // CHANGÉ: 8 colonnes seulement
+                        -1);
+                }
+            }
+        }
+        fclose(f);
+    } else {
+        f = fopen("entraineurs.txt", "w");
+        if (f) fclose(f);
+    }
+}
+
+void enregistrer_inscription(Inscription i) {
+    FILE *f = fopen("inscriptions.txt", "a");
+    if (f != NULL) {
+        fprintf(f, "%s|%s|%s|%s|%s|%s\n",
+                i.nom_complet, i.identifiant, i.cours,
+                i.horaire, i.prix, i.salle);
+        fclose(f);
+    } else {
+        f = fopen("inscriptions.txt", "w");
+        if (f != NULL) {
+            fprintf(f, "%s|%s|%s|%s|%s|%s\n",
+                    i.nom_complet, i.identifiant, i.cours,
+                    i.horaire, i.prix, i.salle);
+            fclose(f);
+        }
+    }
+}
+
+
+#define FICHIER_EMPLOI "emploi_entraineurs.txt"
+#define FICHIER_PROGRESSION "progression_clients.txt"
+
+// Structure pour les données du profil
+typedef struct {
+    char entraineur_id[20];
+    char emploi_lundi[50];
+    char emploi_mardi[50];
+    char emploi_mercredi[50];
+    char emploi_jeudi[50];
+    char emploi_vendredi[50];
+    char emploi_samedi[50];
+} EmploiEntraineur;
+
+typedef struct {
+    char entraineur_id[20];
+    char client_id[20];
+    char semaine1[100];
+    char semaine2[100];
+    char semaine3[100];
+    char semaine4[100];
+} ProgressionClient;
+
+// Structure pour les spécialités
+
+// ========== FONCTIONS DE BASE ==========
+void parser_specialites(const char *specialite_str, Specialites *spec) {
+    memset(spec, 0, sizeof(Specialites));
+    
+    char spec_copy[100];
+    strcpy(spec_copy, specialite_str);
+    char *token = strtok(spec_copy, ",");
+    
+    while (token) {
+        char *clean_token = token;
+        while (*clean_token == ' ') clean_token++;
+        
+        if (strstr(clean_token, "cardio") || strcmp(clean_token, "cardio") == 0)
+            spec->cardio = 1;
+        else if (strstr(clean_token, "dance") || strcmp(clean_token, "dance") == 0)
+            spec->dance = 1;
+        else if (strstr(clean_token, "musculation") || strcmp(clean_token, "musculation") == 0)
+            spec->musculation = 1;
+        else if (strstr(clean_token, "boxe") || strcmp(clean_token, "boxe") == 0)
+            spec->boxe = 1;
+        else if (strstr(clean_token, "gymnastique") || strcmp(clean_token, "gymnastique") == 0)
+            spec->gymnastique = 1;
+        
+        token = strtok(NULL, ",");
+    }
+}
+
+int correspond_specialites(const char *objectifs_str, const Specialites *spec_entraineur) {
+    int obj_cardio, obj_dance, obj_musculation, obj_boxe, obj_gymnastique;
+    
+    if (sscanf(objectifs_str, "%d,%d,%d,%d,%d", 
+               &obj_cardio, &obj_dance, &obj_musculation, &obj_boxe, &obj_gymnastique) != 5) {
+        return 0;
+    }
+    
+    return (obj_cardio && spec_entraineur->cardio) ||
+           (obj_dance && spec_entraineur->dance) ||
+           (obj_musculation && spec_entraineur->musculation) ||
+           (obj_boxe && spec_entraineur->boxe) ||
+           (obj_gymnastique && spec_entraineur->gymnastique);
+}
+
+// ========== FONCTIONS POUR CLIENTS ==========
+void configurer_columns_profile_client(GtkWidget *treeview) {
+    if (!treeview || !GTK_IS_TREE_VIEW(treeview)) return;
+    
+    GList *columns = gtk_tree_view_get_columns(GTK_TREE_VIEW(treeview));
+    GList *iter = columns;
+    while (iter) {
+        gtk_tree_view_remove_column(GTK_TREE_VIEW(treeview), GTK_TREE_VIEW_COLUMN(iter->data));
+        iter = iter->next;
+    }
+    if (columns) g_list_free(columns);
+    
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+    
+    // ID Membre
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("ID Membre", renderer, "text", 0, NULL);
+    gtk_tree_view_column_set_min_width(column, 80);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Poids (éditable)
+    renderer = gtk_cell_renderer_text_new();
+    g_object_set(renderer, "editable", TRUE, NULL);
+    column = gtk_tree_view_column_new_with_attributes("Poids (kg)", renderer, "text", 1, NULL);
+    gtk_tree_view_column_set_min_width(column, 80);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Progression Semaine 1 (éditable)
+    renderer = gtk_cell_renderer_text_new();
+    g_object_set(renderer, "editable", TRUE, NULL);
+    column = gtk_tree_view_column_new_with_attributes("Semaine 1", renderer, "text", 2, NULL);
+    gtk_tree_view_column_set_min_width(column, 100);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Progression Semaine 2 (éditable)
+    renderer = gtk_cell_renderer_text_new();
+    g_object_set(renderer, "editable", TRUE, NULL);
+    column = gtk_tree_view_column_new_with_attributes("Semaine 2", renderer, "text", 3, NULL);
+    gtk_tree_view_column_set_min_width(column, 100);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Progression Semaine 3 (éditable)
+    renderer = gtk_cell_renderer_text_new();
+    g_object_set(renderer, "editable", TRUE, NULL);
+    column = gtk_tree_view_column_new_with_attributes("Semaine 3", renderer, "text", 4, NULL);
+    gtk_tree_view_column_set_min_width(column, 100);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Progression Semaine 4 (éditable)
+    renderer = gtk_cell_renderer_text_new();
+    g_object_set(renderer, "editable", TRUE, NULL);
+    column = gtk_tree_view_column_new_with_attributes("Semaine 4", renderer, "text", 5, NULL);
+    gtk_tree_view_column_set_min_width(column, 100);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Améliorer l'apparence
+    gtk_tree_view_set_rules_hint(GTK_TREE_VIEW(treeview), TRUE);
+}
+void charger_progression_existante(const char *entraineur_id, const char *client_id,
+                                   char *sem1, char *sem2, char *sem3, char *sem4) {
+    // Initialiser avec valeurs par défaut
+    strcpy(sem1, "À remplir");
+    strcpy(sem2, "À remplir");
+    strcpy(sem3, "À remplir");
+    strcpy(sem4, "À remplir");
+    
+    FILE *f = fopen("progression_clients.txt", "r");
+    if (!f) {
+        g_print("DEBUG: Fichier progression_clients.txt non trouvé\n");
+        return;
+    }
+    
+    char ligne[300];
+    int trouve = 0;
+    
+    while (fgets(ligne, sizeof(ligne), f)) {
+        ligne[strcspn(ligne, "\n")] = 0;
+        
+        if (strlen(ligne) > 0) {
+            char eid[50], cid[50], s1[100], s2[100], s3[100], s4[100];
+            
+            // Parser la ligne
+            if (sscanf(ligne, "%49[^|]|%49[^|]|%99[^|]|%99[^|]|%99[^|]|%99[^|]", 
+                      eid, cid, s1, s2, s3, s4) == 6) {
+                
+                // Vérifier si c'est la bonne combinaison entraîneur-client
+                if (strcmp(eid, entraineur_id) == 0 && strcmp(cid, client_id) == 0) {
+                    strcpy(sem1, s1);
+                    strcpy(sem2, s2);
+                    strcpy(sem3, s3);
+                    strcpy(sem4, s4);
+                    trouve = 1;
+                    g_print("DEBUG: Progression trouvée pour client %s\n", client_id);
+                    break;
+                }
+            }
+        }
+    }
+    
+    fclose(f);
+    
+    if (!trouve) {
+        g_print("DEBUG: Aucune progression trouvée pour client %s\n", client_id);
+    }
+}
+void charger_clients_entraineur(GtkWidget *treeview, const char *entraineur_id) {
+    if (!treeview || !entraineur_id) return;
+    
+    g_print("\n=== CHARGEMENT CLIENTS POUR ENTRAÎNEUR %s ===\n", entraineur_id);
+    
+    // 1. Récupérer l'entraîneur
+    Entraineur e = chercher_entraineur(entraineur_id);
+    if (strcmp(e.id, "Non trouvé") == 0) {
+        g_print("ERROR: Entraîneur non trouvé\n");
+        return;
+    }
+    
+    g_print("Entraîneur: %s (ID: %s)\n", e.nom_complet, e.id);
+    g_print("Spécialités: %s\n", e.specialite);
+    
+    // 2. Parser les spécialités de l'entraîneur
+    Specialites spec_entraineur;
+    parser_specialites(e.specialite, &spec_entraineur);
+    
+    g_print("Spécialités parsées: cardio=%d, dance=%d, musculation=%d, boxe=%d, gymnastique=%d\n",
+           spec_entraineur.cardio, spec_entraineur.dance, spec_entraineur.musculation,
+           spec_entraineur.boxe, spec_entraineur.gymnastique);
+    
+    // 3. Configurer les colonnes du TreeView
+    GList *columns = gtk_tree_view_get_columns(GTK_TREE_VIEW(treeview));
+    if (columns == NULL) {
+        configurer_columns_profile_client(treeview);
+    }
+    if (columns) g_list_free(columns);
+    
+    // 4. Créer le store avec 6 colonnes
+    GtkListStore *store = gtk_list_store_new(6, 
+        G_TYPE_STRING,  // ID Membre
+        G_TYPE_STRING,  // Poids (kg)
+        G_TYPE_STRING,  // Semaine 1
+        G_TYPE_STRING,  // Semaine 2
+        G_TYPE_STRING,  // Semaine 3
+        G_TYPE_STRING); // Semaine 4
+    
+    gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), GTK_TREE_MODEL(store));
+    
+    // 5. Ouvrir le fichier reservation.txt
+    FILE *f = fopen("reservation.txt", "r");
+    if (!f) {
+        g_print("ERROR: Fichier reservation.txt non trouvé\n");
+        // Créer un fichier de test
+        f = fopen("reservation.txt", "w");
+        if (f) {
+            fprintf(f, "Membre:22 | Objectifs:1,1,1,1,1 | Disponibilite:Matin | Jours:1,1,1,1,0\n");
+            fprintf(f, "Membre:23 | Objectifs:1,0,0,0,0 | Disponibilite:Après-midi | Jours:0,1,0,1,0\n");
+            fprintf(f, "Membre:24 | Objectifs:0,1,0,0,0 | Disponibilite:Soir | Jours:1,0,1,0,1\n");
+            fprintf(f, "Membre:25 | Objectifs:0,0,1,0,0 | Disponibilite:Toute la journée | Jours:1,1,0,0,0\n");
+            fclose(f);
+            f = fopen("reservation.txt", "r");
+        }
+    }
+    
+    int nb_clients = 0;
+    if (f) {
+        char ligne[300];
+        GtkTreeIter iter;
+        
+        g_print("\n=== LECTURE FICHIER RESERVATION ===\n");
+        
+        while (fgets(ligne, sizeof(ligne), f)) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) == 0) continue;
+            
+            g_print("Ligne brute: %s\n", ligne);
+            
+            // Variables pour stocker les données
+            char membre_id[50] = "";
+            char objectifs[50] = "";
+            char disponibilite[50] = "";
+            char jours[50] = "";
+            
+            // Parser la ligne avec le format exact
+            // Format: "Membre:22 | Objectifs:1,1,1,1,1 | Disponibilite:Matin | Jours:1,1,1,1,0"
+            
+            char *token = strtok(ligne, "|");
+            while (token) {
+                // Nettoyer les espaces
+                char *clean_token = token;
+                while (*clean_token == ' ') clean_token++;
+                
+                g_print("Token nettoyé: '%s'\n", clean_token);
+                
+                if (strstr(clean_token, "Membre:")) {
+                    strcpy(membre_id, clean_token + 7); // Après "Membre:"
+                    g_print("  -> ID Membre: %s\n", membre_id);
+                } 
+                else if (strstr(clean_token, "Objectifs:")) {
+                    strcpy(objectifs, clean_token + 10); // Après "Objectifs:"
+                    g_print("  -> Objectifs: %s\n", objectifs);
+                } 
+                else if (strstr(clean_token, "Disponibilite:")) {
+                    strcpy(disponibilite, clean_token + 14); // Après "Disponibilite:"
+                    g_print("  -> Disponibilité: %s\n", disponibilite);
+                } 
+                else if (strstr(clean_token, "Jours:")) {
+                    strcpy(jours, clean_token + 6); // Après "Jours:"
+                    g_print("  -> Jours: %s\n", jours);
+                }
+                
+                token = strtok(NULL, "|");
+            }
+            
+            // Vérifier si les objectifs correspondent aux spécialités de l'entraîneur
+            if (strlen(objectifs) > 0) {
+                g_print("Vérification correspondance pour Membre %s...\n", membre_id);
+                
+                int correspond = correspond_specialites(objectifs, &spec_entraineur);
+                
+                if (correspond) {
+                    g_print("  -> CORRESPOND ! Ajout au TreeView\n");
+                    
+                    // Charger la progression existante
+                    char sem1[100], sem2[100], sem3[100], sem4[100];
+                    charger_progression_existante(entraineur_id, membre_id, sem1, sem2, sem3, sem4);
+                    
+                    // Ajouter au TreeView
+                    gtk_list_store_append(store, &iter);
+                    gtk_list_store_set(store, &iter,
+                        0, membre_id,
+                        1, "70",  // Poids par défaut
+                        2, (strlen(sem1) > 0 && strcmp(sem1, "Non défini") != 0) ? sem1 : "À remplir",
+                        3, (strlen(sem2) > 0 && strcmp(sem2, "Non défini") != 0) ? sem2 : "À remplir",
+                        4, (strlen(sem3) > 0 && strcmp(sem3, "Non défini") != 0) ? sem3 : "À remplir",
+                        5, (strlen(sem4) > 0 && strcmp(sem4, "Non défini") != 0) ? sem4 : "À remplir",
+                        -1);
+                    
+                    nb_clients++;
+                    g_print("  -> Client ajouté (total: %d)\n", nb_clients);
+                } else {
+                    g_print("  -> NE CORRESPOND PAS\n");
+                }
+            }
+            g_print("---\n");
+        }
+        
+        fclose(f);
+        
+        g_print("\n=== RÉSULTAT ===\n");
+        g_print("Total clients chargés: %d\n", nb_clients);
+        
+        // Si aucun client, afficher un message
+        if (nb_clients == 0) {
+            g_print("Aucun client correspondant aux spécialités\n");
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter,
+                0, "Aucun client",
+                1, "",
+                2, "Vérifiez les spécialités",
+                3, "",
+                4, "",
+                5, "",
+                -1);
+        }
+        
+    } else {
+        g_print("ERROR: Impossible d'ouvrir reservation.txt\n");
+    }
+    
+    g_object_unref(store);
+    g_print("=== FIN CHARGEMENT CLIENTS ===\n\n");
+}
+void sauvegarder_progression_clients(GtkWidget *treeview, const char *entraineur_id) {
+    if (!treeview || !entraineur_id) return;
+    
+    g_print("\n=== SAUVEGARDE PROGRESSION CLIENTS POUR ENTRAÎNEUR %s ===\n", entraineur_id);
+    
+    // 1. Lire les progressions existantes
+    FILE *f_in = fopen("progression_clients.txt", "r");
+    FILE *f_temp = fopen("temp_progression.txt", "w");
+    
+    if (!f_temp) {
+        g_print("ERROR: Impossible de créer fichier temporaire\n");
+        if (f_in) fclose(f_in);
+        return;
+    }
+    
+    // 2. Récupérer les données du TreeView
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    GtkTreeIter iter;
+    gboolean valid = gtk_tree_model_get_iter_first(model, &iter);
+    
+    int nb_sauvegardes = 0;
+    
+    while (valid) {
+        gchar *client_id = NULL;
+        gchar *poids = NULL;
+        gchar *sem1 = NULL;
+        gchar *sem2 = NULL;
+        gchar *sem3 = NULL;
+        gchar *sem4 = NULL;
+        
+        gtk_tree_model_get(model, &iter, 
+            0, &client_id,
+            1, &poids,
+            2, &sem1,
+            3, &sem2,
+            4, &sem3,
+            5, &sem4,
+            -1);
+        
+        // Vérifier que ce n'est pas la ligne "Aucun client"
+        if (client_id && strcmp(client_id, "Aucun client") != 0) {
+            // Écrire la nouvelle ligne
+            fprintf(f_temp, "%s|%s|%s|%s|%s|%s\n",
+                    entraineur_id,
+                    client_id ? client_id : "",
+                    sem1 ? sem1 : "À remplir",
+                    sem2 ? sem2 : "À remplir",
+                    sem3 ? sem3 : "À remplir",
+                    sem4 ? sem4 : "À remplir");
+            
+            g_print("Sauvegardé: Client %s - S1:%s S2:%s S3:%s S4:%s\n",
+                   client_id ? client_id : "N/A",
+                   sem1 ? sem1 : "N/A",
+                   sem2 ? sem2 : "N/A",
+                   sem3 ? sem3 : "N/A",
+                   sem4 ? sem4 : "N/A");
+            
+            nb_sauvegardes++;
+        }
+        
+        // Libérer la mémoire
+        if (client_id) g_free(client_id);
+        if (poids) g_free(poids);
+        if (sem1) g_free(sem1);
+        if (sem2) g_free(sem2);
+        if (sem3) g_free(sem3);
+        if (sem4) g_free(sem4);
+        
+        valid = gtk_tree_model_iter_next(model, &iter);
+    }
+    
+    g_print("Total lignes sauvegardées: %d\n", nb_sauvegardes);
+    
+    // 3. Copier les autres lignes (autres entraîneurs)
+    if (f_in) {
+        char ligne[300];
+        while (fgets(ligne, sizeof(ligne), f_in)) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) > 0) {
+                char eid[50], cid[50];
+                // Lire l'ID entraîneur et client
+                if (sscanf(ligne, "%49[^|]|%49[^|]", eid, cid) == 2) {
+                    // Si c'est pour un autre entraîneur, le garder
+                    if (strcmp(eid, entraineur_id) != 0) {
+                        fprintf(f_temp, "%s\n", ligne);
+                    }
+                }
+            }
+        }
+        fclose(f_in);
+    }
+    
+    fclose(f_temp);
+    
+    // 4. Remplacer l'ancien fichier
+    remove("progression_clients.txt");
+    rename("temp_progression.txt", "progression_clients.txt");
+    
+    g_print("=== SAUVEGARDE TERMINÉE ===\n\n");
+}
+
+// ========== FONCTIONS POUR EMPLOI DU TEMPS ==========
+void configurer_columns_profile_emploi(GtkWidget *treeview) {
+    if (!treeview || !GTK_IS_TREE_VIEW(treeview)) return;
+    
+    // Supprimer les colonnes existantes
+    GList *columns = gtk_tree_view_get_columns(GTK_TREE_VIEW(treeview));
+    GList *iter_col = columns;
+    while (iter_col) {
+        gtk_tree_view_remove_column(GTK_TREE_VIEW(treeview), GTK_TREE_VIEW_COLUMN(iter_col->data));
+        iter_col = iter_col->next;
+    }
+    if (columns) g_list_free(columns);
+    
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+    
+    // Colonne 1: Jour
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Jour", renderer, "text", 0, NULL);
+    gtk_tree_view_column_set_min_width(column, 80);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Colonne 2: Matin (CHECKBUTTON)
+    renderer = gtk_cell_renderer_toggle_new();
+    column = gtk_tree_view_column_new_with_attributes("Matin", renderer, "active", 1, NULL);
+    gtk_tree_view_column_set_min_width(column, 60);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Colonne 3: Après-midi (CHECKBUTTON)
+    renderer = gtk_cell_renderer_toggle_new();
+    column = gtk_tree_view_column_new_with_attributes("Après-midi", renderer, "active", 2, NULL);
+    gtk_tree_view_column_set_min_width(column, 80);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Colonne 4: Soir (CHECKBUTTON)
+    renderer = gtk_cell_renderer_toggle_new();
+    column = gtk_tree_view_column_new_with_attributes("Soir", renderer, "active", 3, NULL);
+    gtk_tree_view_column_set_min_width(column, 60);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Colonne 5: Toute journée (CHECKBUTTON)
+    renderer = gtk_cell_renderer_toggle_new();
+    column = gtk_tree_view_column_new_with_attributes("Toute journée", renderer, "active", 4, NULL);
+    gtk_tree_view_column_set_min_width(column, 100);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    
+    // Améliorer l'apparence
+    gtk_tree_view_set_rules_hint(GTK_TREE_VIEW(treeview), TRUE);
+}
+void charger_emploi_existant(const char *entraineur_id, char jours[6][5]) {
+    // Initialiser avec "-"
+    for (int i = 0; i < 6; i++) {
+        for (int j = 0; j < 5; j++) {
+            jours[i][j] = '-';
+        }
+        jours[i][4] = '\0';
+    }
+    
+    FILE *f = fopen(FICHIER_EMPLOI, "r");
+    if (!f) return;
+    
+    char ligne[200];
+    while (fgets(ligne, sizeof(ligne), f)) {
+        ligne[strcspn(ligne, "\n")] = 0;
+        
+        if (strlen(ligne) > 0) {
+            char eid[50], jour[20], matin[10], am[10], soir[10], tj[10];
+            
+            if (sscanf(ligne, "%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]", 
+                      eid, jour, matin, am, soir, tj) == 6) {
+                if (strcmp(eid, entraineur_id) == 0) {
+                    int idx = -1;
+                    if (strcmp(jour, "Lundi") == 0) idx = 0;
+                    else if (strcmp(jour, "Mardi") == 0) idx = 1;
+                    else if (strcmp(jour, "Mercredi") == 0) idx = 2;
+                    else if (strcmp(jour, "Jeudi") == 0) idx = 3;
+                    else if (strcmp(jour, "Vendredi") == 0) idx = 4;
+                    else if (strcmp(jour, "Samedi") == 0) idx = 5;
+                    
+                    if (idx >= 0) {
+                        jours[idx][0] = matin[0];
+                        jours[idx][1] = am[0];
+                        jours[idx][2] = soir[0];
+                        jours[idx][3] = tj[0];
+                    }
+                }
+            }
+        }
+    }
+    
+    fclose(f);
+}
+
+void charger_emploi_entraineur(GtkWidget *treeview, const char *entraineur_id) {
+    if (!treeview) return;
+    
+    g_print("DEBUG: Chargement emploi (checkbuttons) pour entraîneur: %s\n", entraineur_id);
+    
+    // Configurer les colonnes
+    GList *columns = gtk_tree_view_get_columns(GTK_TREE_VIEW(treeview));
+    if (columns == NULL) {
+        configurer_columns_profile_emploi(treeview);
+    }
+    if (columns) g_list_free(columns);
+    
+    // Créer le store avec G_TYPE_BOOLEAN pour les checkbuttons
+    GtkListStore *store = gtk_list_store_new(5,
+        G_TYPE_STRING,    // Jour
+        G_TYPE_BOOLEAN,   // Matin (TRUE/FALSE)
+        G_TYPE_BOOLEAN,   // Après-midi (TRUE/FALSE)
+        G_TYPE_BOOLEAN,   // Soir (TRUE/FALSE)
+        G_TYPE_BOOLEAN);  // Toute journée (TRUE/FALSE)
+    
+    gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), GTK_TREE_MODEL(store));
+    
+    const char *jours[] = {"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"};
+    
+    // Vérifier les jours depuis emploi_entraineurs.txt d'abord
+    gboolean jours_actifs[6][4] = {
+        {FALSE, FALSE, FALSE, FALSE}, // Lundi
+        {FALSE, FALSE, FALSE, FALSE}, // Mardi
+        {FALSE, FALSE, FALSE, FALSE}, // Mercredi
+        {FALSE, FALSE, FALSE, FALSE}, // Jeudi
+        {FALSE, FALSE, FALSE, FALSE}, // Vendredi
+        {FALSE, FALSE, FALSE, FALSE}  // Samedi
+    };
+    
+    // Charger depuis le fichier si existe
+    FILE *f = fopen("emploi_entraineurs.txt", "r");
+    if (f) {
+        char ligne[200];
+        while (fgets(ligne, sizeof(ligne), f)) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) > 0) {
+                char eid[50], jour[20], matin[10], aprem[10], soir[10], tj[10];
+                
+                if (sscanf(ligne, "%49[^|]|%19[^|]|%9[^|]|%9[^|]|%9[^|]|%9[^|]", 
+                          eid, jour, matin, aprem, soir, tj) == 6) {
+                    
+                    if (strcmp(eid, entraineur_id) == 0) {
+                        int idx = -1;
+                        if (strcmp(jour, "Lundi") == 0) idx = 0;
+                        else if (strcmp(jour, "Mardi") == 0) idx = 1;
+                        else if (strcmp(jour, "Mercredi") == 0) idx = 2;
+                        else if (strcmp(jour, "Jeudi") == 0) idx = 3;
+                        else if (strcmp(jour, "Vendredi") == 0) idx = 4;
+                        else if (strcmp(jour, "Samedi") == 0) idx = 5;
+                        
+                        if (idx >= 0) {
+                            jours_actifs[idx][0] = (strcmp(matin, "OUI") == 0 || strcmp(matin, "1") == 0) ? TRUE : FALSE;
+                            jours_actifs[idx][1] = (strcmp(aprem, "OUI") == 0 || strcmp(aprem, "1") == 0) ? TRUE : FALSE;
+                            jours_actifs[idx][2] = (strcmp(soir, "OUI") == 0 || strcmp(soir, "1") == 0) ? TRUE : FALSE;
+                            jours_actifs[idx][3] = (strcmp(tj, "OUI") == 0 || strcmp(tj, "1") == 0) ? TRUE : FALSE;
+                        }
+                    }
+                }
+            }
+        }
+        fclose(f);
+        g_print("DEBUG: Chargé depuis emploi_entraineurs.txt\n");
+    } else {
+        // Si pas de fichier, charger depuis les jours de l'entraîneur
+        g_print("DEBUG: Fichier emploi_entraineurs.txt non trouvé, utilisation entraineurs.txt\n");
+        
+        Entraineur e = chercher_entraineur(entraineur_id);
+        if (strcmp(e.id, "Non trouvé") != 0 && strlen(e.jours) > 0) {
+            g_print("DEBUG: Jours de l'entraîneur: %s\n", e.jours);
+            
+            char jours_copy[100];
+            strcpy(jours_copy, e.jours);
+            char *token = strtok(jours_copy, ",");
+            
+            while (token) {
+                char *clean_token = token;
+                while (*clean_token == ' ') clean_token++;
+                
+                for (int i = 0; i < 6; i++) {
+                    if (strcasecmp(clean_token, jours[i]) == 0) {
+                        // Cocher "Toute la journée" par défaut
+                        jours_actifs[i][3] = TRUE;
+                        g_print("DEBUG: Jour actif trouvé: %s\n", jours[i]);
+                        break;
+                    }
+                }
+                token = strtok(NULL, ",");
+            }
+        }
+    }
+    
+    // Ajouter les lignes au TreeView
+    GtkTreeIter iter;
+    for (int i = 0; i < 6; i++) {
+        gtk_list_store_append(store, &iter);
+        
+        gtk_list_store_set(store, &iter,
+            0, jours[i],
+            1, jours_actifs[i][0],  // Matin
+            2, jours_actifs[i][1],  // Après-midi
+            3, jours_actifs[i][2],  // Soir
+            4, jours_actifs[i][3],  // Toute journée
+            -1);
+    }
+    
+    g_object_unref(store);
+    g_print("DEBUG: Emploi chargé avec checkbuttons\n");
+}
+void sauvegarder_emploi_entraineur(GtkWidget *treeview, const char *entraineur_id) {
+    if (!treeview || !entraineur_id) return;
+    
+    g_print("DEBUG: Sauvegarde emploi (checkbuttons) pour entraîneur: %s\n", entraineur_id);
+    
+    // Lire le fichier existant
+    FILE *f_in = fopen("emploi_entraineurs.txt", "r");
+    FILE *f_temp = fopen("temp_emploi.txt", "w");
+    
+    if (!f_temp) {
+        g_print("ERROR: Impossible de créer fichier temporaire\n");
+        if (f_in) fclose(f_in);
+        return;
+    }
+    
+    const char *jours[] = {"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"};
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    GtkTreeIter iter;
+    gboolean valid = gtk_tree_model_get_iter_first(model, &iter);
+    int idx = 0;
+    
+    // Écrire les nouvelles données
+    while (valid && idx < 6) {
+        gboolean matin, aprem, soir, toute_journee;
+        
+        gtk_tree_model_get(model, &iter,
+            1, &matin,
+            2, &aprem,
+            3, &soir,
+            4, &toute_journee,
+            -1);
+        
+        // Convertir TRUE/FALSE en OUI/NON
+        const char *matin_str = matin ? "OUI" : "NON";
+        const char *aprem_str = aprem ? "OUI" : "NON";
+        const char *soir_str = soir ? "OUI" : "NON";
+        const char *tj_str = toute_journee ? "OUI" : "NON";
+        
+        // Écrire la ligne
+        fprintf(f_temp, "%s|%s|%s|%s|%s|%s\n",
+                entraineur_id, 
+                jours[idx],
+                matin_str,
+                aprem_str,
+                soir_str,
+                tj_str);
+        
+        g_print("DEBUG: Sauvegardé %s: M=%s A=%s S=%s T=%s\n",
+                jours[idx], matin_str, aprem_str, soir_str, tj_str);
+        
+        idx++;
+        valid = gtk_tree_model_iter_next(model, &iter);
+    }
+    
+    // Copier les autres entraîneurs
+    if (f_in) {
+        char ligne[200];
+        while (fgets(ligne, sizeof(ligne), f_in)) {
+            ligne[strcspn(ligne, "\n")] = 0;
+            
+            if (strlen(ligne) > 0) {
+                char eid[50];
+                if (sscanf(ligne, "%49[^|]", eid) == 1) {
+                    if (strcmp(eid, entraineur_id) != 0) {
+                        fprintf(f_temp, "%s\n", ligne);
+                    }
+                }
+            }
+        }
+        fclose(f_in);
+    }
+    
+    fclose(f_temp);
+    
+    // Remplacer l'ancien fichier
+    remove("emploi_entraineurs.txt");
+    rename("temp_emploi.txt", "emploi_entraineurs.txt");
+    
+    g_print("DEBUG: Emploi sauvegardé avec succès\n");
+}
+// ========== FONCTION PRINCIPALE ==========
+void afficher_profile_entraineur(const char *nom, const char *id) {
+    GtkWidget *window = create_Profil_d_un_entra__neur();
+    
+    if (window) {
+        // Remplir les champs
+        GtkWidget *entry_nom = lookup_widget(window, "entry44");
+        GtkWidget *entry_id = lookup_widget(window, "entry45");
+        
+        if (entry_nom) gtk_entry_set_text(GTK_ENTRY(entry_nom), nom);
+        if (entry_id) gtk_entry_set_text(GTK_ENTRY(entry_id), id);
+        
+        // Charger les clients
+        GtkWidget *treeview_clients = lookup_widget(window, "treeview_list_client3");
+        if (treeview_clients) {
+            charger_clients_entraineur(treeview_clients, id);
+        }
+        
+        // Charger l'emploi du temps
+        GtkWidget *treeview_emploi = lookup_widget(window, "treeview_emploit4");
+        if (treeview_emploi) {
+            charger_emploi_entraineur(treeview_emploi, id);
+        }
+        
+        // Connecter les boutons
+        GtkWidget *btn_valider_clients = lookup_widget(window, "button_valider_client100");
+        GtkWidget *btn_valider_emploi = lookup_widget(window, "button_valider_emplois101");
+        
+        if (btn_valider_clients) {
+            g_signal_connect(btn_valider_clients, "clicked",
+                            G_CALLBACK(on_button_valider_client100_clicked),
+                            NULL);
+        }
+        if (btn_valider_emploi) {
+            g_signal_connect(btn_valider_emploi, "clicked",
+                            G_CALLBACK(on_button_valider_emplois101_clicked),
+                            NULL);
+        }
+        
+        gtk_widget_show(window);
+    }
+}

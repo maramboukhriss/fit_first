@@ -200,3 +200,62 @@ on_buttonrefrech_clicked               (GtkWidget       *button,
 void
 on_centre_clicked                      (GtkWidget       *objet_graphique,
                                         gpointer         user_data);
+// entraineurs
+void on_button_ajouter_clicked(GtkWidget *button, gpointer user_data);
+void on_button_rechercher_clicked(GtkWidget *button, gpointer user_data);
+void on_button_modifier_clicked(GtkWidget *button, gpointer user_data);
+void on_button_enregistrer_modif_clicked(GtkWidget *button, gpointer user_data);
+void on_button_supprimer_clicked(GtkWidget *button, gpointer user_data);
+void on_button_afficher_tous_clicked(GtkWidget *button, gpointer user_data);
+void on_radiobutton3_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_radiobutton4_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_radiobutton1_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_radiobutton2_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_spinbutton_experience_value_changed(GtkSpinButton *spinbutton, gpointer user_data);
+void on_spinbutton_specialite_value_changed(GtkSpinButton *spinbutton, gpointer user_data);
+void on_spinbutton_experience2_value_changed(GtkSpinButton *spinbutton, gpointer user_data);
+void on_spinbutton_specialite2_value_changed(GtkSpinButton *spinbutton, gpointer user_data);
+void on_ajout_button95_clicked(GtkWidget *button, gpointer user_data);
+void on_button96_clicked(GtkWidget *button, gpointer user_data);
+void on_button97_clicked(GtkWidget *button, gpointer user_data);
+void on_spinbutton1_changed(GtkSpinButton *spinbutton, gpointer user_data);
+void on_spinbutton2_changed(GtkSpinButton *spinbutton, gpointer user_data);
+void on_ajout_dispo_comboboxentry23_changed(GtkComboBox *combobox, gpointer user_data);
+void on_comboboxentry25_changed(GtkComboBox *combobox, gpointer user_data);
+void on_treeview6_row_activated(GtkTreeView *treeview, GtkTreePath *path,
+                                 GtkTreeViewColumn *column, gpointer user_data);
+
+void on_lundi_checkbutton1_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_mardi_checkbutton2_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_mercredi_checkbutton3_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_jeudi_checkbutton4_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_vendredi_checkbutton5_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_samedi_checkbutton6_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_lundi_checkbutton7_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_mardi_checkbutton8_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_mercredi_checkbutton9_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_jeudi_checkbutton10_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_vendredi_checkbutton11_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_samedi_checkbutton12_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+
+void on_rechercher_id_clicked(GtkWidget *button, gpointer user_data);
+// Ajoutez ces lignes à la fin de callbacks.h, avant #endif
+
+void on_button98_clicked(GtkWidget *button, gpointer user_data);
+void on_treeview6_row_activated(GtkTreeView *treeview, GtkTreePath *path,
+                                GtkTreeViewColumn *column, gpointer user_data);
+// callbacks.h - Ajouter ces lignes à la fin
+void on_button99_clicked(GtkWidget *button, gpointer user_data);
+void on_button_valider_client100_clicked(GtkWidget *button, gpointer user_data);
+void on_button_valider_emplois101_clicked(GtkWidget *button, gpointer user_data);
+void afficher_profile_entraineur(const char *nom, const char *id);
+void charger_clients_entraineur(GtkWidget *treeview, const char *entraineur_id);
+void charger_emploi_entraineur(GtkWidget *treeview, const char *entraineur_id);
+void sauvegarder_progression_clients(GtkWidget *treeview, const char *entraineur_id);
+void sauvegarder_emploi_entraineur(GtkWidget *treeview, const char *entraineur_id);
+
+
+
+void
+on_button51_clicked                    (GtkButton       *button,
+                                        gpointer         user_data);

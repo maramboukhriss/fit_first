@@ -11,6 +11,110 @@
 
 #include "interface.h"
 #include "support.h"
+#include "fonctions.h"
+#include "callbacks.h"
+void initialiser_combobox_entry(GtkWidget *combo) {
+    if (combo && GTK_IS_COMBO_BOX_ENTRY(combo)) {
+        GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(combo)));
+        
+        GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+        GtkTreeIter iter;
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "Matin", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "Après-midi", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "Soir", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "Toute la journée", -1);
+        
+        gtk_combo_box_set_model(GTK_COMBO_BOX(combo), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        gtk_entry_set_editable(entry, TRUE);
+        gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+    }
+}
+
+void initialiser_combobox_cours(GtkWidget *combo) {
+    if (combo && GTK_IS_COMBO_BOX_ENTRY(combo)) {
+        GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+        GtkTreeIter iter;
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "cardio", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "musculation", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "dance", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "gymnastique", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "boxe", -1);
+        
+        gtk_combo_box_set_model(GTK_COMBO_BOX(combo), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(combo)));
+        gtk_entry_set_editable(entry, TRUE);
+        gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+    }
+}
+
+void initialiser_combobox_horaire(GtkWidget *combo) {
+    if (combo && GTK_IS_COMBO_BOX_ENTRY(combo)) {
+        GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+        GtkTreeIter iter;
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "matin", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "après-midi", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "soir", -1);
+        
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, "toute la journée", -1);
+        
+        gtk_combo_box_set_model(GTK_COMBO_BOX(combo), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(combo)));
+        gtk_entry_set_editable(entry, TRUE);
+        gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+    }
+}
+
+void initialiser_combobox_prix(GtkWidget *combo) {
+    if (combo && GTK_IS_COMBO_BOX_ENTRY(combo)) {
+        GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+        GtkTreeIter iter;
+        
+        for (int i = 40; i <= 100; i += 10) {
+            gtk_list_store_append(store, &iter);
+            char prix[10];
+            snprintf(prix, sizeof(prix), "%d dt", i);
+            gtk_list_store_set(store, &iter, 0, prix, -1);
+        }
+        
+        gtk_combo_box_set_model(GTK_COMBO_BOX(combo), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        GtkEntry *entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(combo)));
+        gtk_entry_set_editable(entry, TRUE);
+        gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+    }
+}
 
 int
 main (int argc, char *argv[])
@@ -25,7 +129,114 @@ main (int argc, char *argv[])
   GtkWidget *gestioncentres;
   GtkWidget *window1;
   GtkWidget *window2;
-  
+  //entraineur
+    GtkWidget *window_entraineurs;
+    GtkWidget *window_inscription;
+    GtkWidget *treeview1000, *treeview6;
+    GtkWidget *combo_ajout, *combo_modif;
+    GtkWidget *combo_cours, *combo_horaire, *combo_prix;
+    GtkWidget *button98, *treeview6_widget;
+   
+    gtk_init(&argc, &argv);
+   
+    // ======== FENÊTRE 1: GESTION DES ENTRAÎNEURS ========
+    window_entraineurs = create_gestion_des_entraineur();
+   
+    if (window_entraineurs != NULL) {
+        // Initialiser les combobox ENTRY
+        combo_ajout = lookup_widget(window_entraineurs, "ajout_dispo_comboboxentry23");
+        combo_modif = lookup_widget(window_entraineurs, "comboboxentry25");
+        
+        if (combo_ajout) initialiser_combobox_entry(combo_ajout);
+        if (combo_modif) initialiser_combobox_entry(combo_modif);
+       
+        // Initialiser les TreeViews
+        treeview1000 = lookup_widget(window_entraineurs, "treeview1000");
+        treeview6 = lookup_widget(window_entraineurs, "treeview6");
+        
+        if (treeview1000) {
+            configurer_columns_treeview(treeview1000);
+            afficher_tous_entraineurs(treeview1000);
+        }
+        
+        if (treeview6) {
+            configurer_columns_treeview(treeview6);
+            afficher_tous_entraineurs(treeview6);
+        }
+        
+        // ===== CONNEXION DES SIGNAUX MANQUANTS =====
+        // 1. Bouton recherche dans l'onglet "Rechercher" (button98)
+        button98 = lookup_widget(window_entraineurs, "button98");
+        if (button98) {
+            g_signal_connect(button98, "clicked", 
+                            G_CALLBACK(on_button98_clicked), NULL);
+            g_print("DEBUG: Bouton recherche (button98) connecté\n");
+        } else {
+            g_print("DEBUG: Bouton button98 non trouvé\n");
+        }
+        
+        // 2. Double-clic sur treeview6 pour suppression
+        treeview6_widget = lookup_widget(window_entraineurs, "treeview6");
+        if (treeview6_widget) {
+            g_signal_connect(treeview6_widget, "row-activated",
+                            G_CALLBACK(on_treeview6_row_activated), NULL);
+            g_print("DEBUG: Treeview6 double-clic connecté\n");
+        } else {
+            g_print("DEBUG: Treeview6 non trouvé\n");
+        }
+        // ===== FIN CONNEXION DES SIGNAUX =====
+       
+        gtk_widget_show(window_entraineurs);
+    } else {
+        g_print("Erreur: Impossible de créer la fenêtre de gestion des entraîneurs.\n");
+        return 1;
+    }
+    
+    // ======== FENÊTRE 2: INSCRIPTION AUX COURS ========
+    window_inscription = create_L_entraineur_s_incrire____un_cours();
+    
+    if (window_inscription != NULL) {
+        // Initialiser les combobox
+        combo_cours = lookup_widget(window_inscription, "comboboxentry9");
+        combo_horaire = lookup_widget(window_inscription, "comboboxentry10");
+        combo_prix = lookup_widget(window_inscription, "comboboxentry11");
+        
+        if (combo_cours) initialiser_combobox_cours(combo_cours);
+        if (combo_horaire) initialiser_combobox_horaire(combo_horaire);
+        if (combo_prix) initialiser_combobox_prix(combo_prix);
+       
+        gtk_widget_show(window_inscription);
+    } else {
+        g_print("Erreur: Impossible de créer la fenêtre d'inscription.\n");
+        // Ne pas retourner, on a déjà la première fenêtre
+    }
+    
+    // ======== FENÊTRE 3: LOGIN COACH ========
+    // Créer et afficher la fenêtre de login coach
+    GtkWidget *window_login = create_login_coach();
+    if (window_login != NULL) {
+        // Connecter le bouton login
+        GtkWidget *button99 = lookup_widget(window_login, "button99");
+        if (button99) {
+            g_signal_connect(button99, "clicked", 
+                            G_CALLBACK(on_button99_clicked), NULL);
+            g_print("DEBUG: Bouton login coach connecté\n");
+        }
+        
+        gtk_widget_show(window_login);
+    } else {
+        g_print("Erreur: Impossible de créer la fenêtre de login coach.\n");
+    }
+    
+    // ======== DÉMARRER LA BOUCLE GTK ========
+    g_print("=== Application démarrée avec succès ===\n");
+    g_print("1. Fenêtre gestion des entraîneurs: OK\n");
+    g_print("2. Fenêtre inscription aux cours: OK\n");
+    g_print("3. Fenêtre login coach: OK\n");
+    g_print("4. Bouton recherche (button98): %s\n", button98 ? "Connecté" : "Non trouvé");
+    g_print("5. Double-clic suppression (treeview6): %s\n", treeview6_widget ? "Connecté" : "Non trouvé");
+    g_print("======================================\n");
+//entraineurs fin    
 #ifdef ENABLE_NLS
   bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
