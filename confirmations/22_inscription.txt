@@ -1,0 +1,15 @@
+=== CONFIRMATION D'INSCRIPTION ===
+
+Date: Dec 17 2025
+Heure: 10:27:46
+
+DESTINATAIRE:
+  maram boukhriss
+  Email: m@gmail.com
+  Téléphone: 567
+
+DÉTAILS DE L'INSCRIPTION:
+  ID Membre: 22
+  Statut: CONFIRMÉ
+
+En production, cet email serait envoyé à l'adresse ci-dessus.
