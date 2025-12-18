@@ -260,10 +260,7 @@ void
 on_button51_clicked                    (GtkButton       *button,
                                         gpointer         user_data);
 //gestion du cours
-#ifndef CALLBACKS_H
-#define CALLBACKS_H
 
-#include <gtk/gtk.h>
 
 // Variables globales
 extern int jours_selectionnes[5];
@@ -320,4 +317,147 @@ void charger_cours_dans_formulaire(char *id_cours, GtkWidget *fenetre);
 void actualiser_toutes_treeviews(GtkWidget *fenetre);
 void supprimer_cours_depuis_treeview(GtkTreeView *treeview, GtkTreePath *path);
 
+
+/////////////////////EQUIPEMENT///////////
+
+void
+on_retour_acceuil_clicked              (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_buttonAjouter_clicked               (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_buttonannuler1_clicked              (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_radioDisponible_add_toggled         (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_radioReserve_add_toggled            (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_buttonannuler2_clicked              (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_buttonModifier_clicked              (GtkButton       *button,
+                                        gpointer         user_data);	
+
+void
+on_buttonRechercherMod_clicked         (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_radioDisponible_mod_toggled         (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_treeview1_row_activated             (GtkTreeView     *treeview,
+                                        GtkTreePath     *path,
+                                        GtkTreeViewColumn *column,
+                                        gpointer         user_data);
+
+void
+on_on_button_recherche_clicked_clicked (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_afficher_liste__clicked             (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_treeview_equip_disp_row_activated   (GtkTreeView     *treeview,
+                                        GtkTreePath     *path,
+                                        GtkTreeViewColumn *column,
+                                        gpointer         user_data);
+
+void
+on_button_reserver_clicked             (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_mes_reservation_clicked      (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_refresh_reserver_clicked     (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_rech_equip_dis_clicked       (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_retour_acceuil_reservation_clicked  (GtkToolButton   *toolbutton,
+                                        gpointer         user_data);
+
+void
+on_radiobutton_reserver1_toggled       (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_radiobutton_reserver2_toggled       (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_radiobutton_reserver3_toggled       (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_button_rech_reserver_clicked        (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_treeview_mes_reservation_row_activated
+                                        (GtkTreeView     *treeview,
+                                        GtkTreePath     *path,
+                                        GtkTreeViewColumn *column,
+                                        gpointer         user_data);
+
+
+
+void
+on_button_refresh_mes_reservation_clicked
+                                        (GtkButton       *button,
+                                        gpointer         user_data);
+////////////////FIN EQUIPP//////////
 #endif
+
+
+
+void
+on_equipement_clicked                  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_Evenement_clicked                   (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_cours_clicked                       (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_entraineur_clicked                  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_rejoindre_cours_clicked      (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_reserver_equip_entr_clicked  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_inscrire_centre_clicked      (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_home7_clicked                       (GtkButton       *button,
+                                        gpointer         user_data);

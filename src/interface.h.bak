@@ -16,3 +16,8 @@ GtkWidget* create_l_entraineur_s_inscrire____un_cours (void);
 GtkWidget* create_gestion_des_entraineur (void);
 GtkWidget* create_login_coach (void);
 GtkWidget* create_profile_d_un_entraineur (void);
+GtkWidget* create_Administrateur_gestion_de_cours (void);
+GtkWidget* create_S_inscrire_menbre_un_cours (void);
+GtkWidget* create_gestion_des_equipements (void);
+GtkWidget* create_reserver_un_equipement (void);
+GtkWidget* create_mes_reservations (void);

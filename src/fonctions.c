@@ -3104,3 +3104,802 @@ void get_statistiques_detaillees(int *total_cours, int *total_inscrits,
         *moyenne_inscrits /= nb_cours;
     }
 }
+////////////////////////EQUIPEMENT////////////////
+#include<string.h>
+#include<stdlib.h>
+#include<time.h>
+#include "equipement.h"
+#include <stdio.h>
+
+//fonction pour la quantite disponible actuelle 
+int get_quantite_disponible(char *filename, char *id) {
+    equip e = chercher(filename, id);
+    if (strcmp(e.id, "-") == 0) return 0;
+    
+    // Calculer la quantité disponible = quantité totale - réservations existantes
+    return e.quantite;
+}
+
+//ajouter un equipement
+int ajouter_equip(char *filename, equip e)
+{
+    // Vérifier si l'ID existe déjà
+    equip existe = chercher(filename, e.id);
+    if (strcmp(existe.id, "-") != 0) {
+        printf("ID %s existe déjà!\n", e.id);
+        return 2; // Code d'erreur pour ID existant
+    }
+    
+    FILE *f = fopen(filename, "a");
+    if (f != NULL)
+    {
+        // On écrit 4 entiers du tableau type un par un
+        fprintf(f, "%s %s %d %d %d %d %d %d %d \n",
+                e.id, e.nom,
+                e.type[0], e.type[1], e.type[2], e.type[3],
+                e.etat, e.disponibilite, e.quantite);
+        fclose(f);
+        printf("Équipement %s ajouté avec succès!\n", e.id);
+        return 1;
+    }
+    else
+    {
+        printf("Erreur d'ouverture du fichier %s\n", filename);
+        return 0;
+    }
+}
+//modifier un equipement
+int modifier_equip(char *filename, char *id, equip nouv)
+{
+    int tr = 0;
+    equip e;
+    FILE *f = fopen(filename, "r");
+    FILE *f2 = fopen("nouv.txt", "w");
+
+    if (f != NULL && f2 != NULL)
+    {
+        while (fscanf(f, "%s %s %d %d %d %d %d %d %d \n",
+                      e.id, e.nom,
+                      &e.type[0], &e.type[1], &e.type[2], &e.type[3],
+                      &e.etat, &e.disponibilite, &e.quantite) != EOF)
+        {
+            if (strcmp(e.id,id)==0)
+            {
+                fprintf(f2, "%s %s %d %d %d %d %d %d %d \n",
+                        nouv.id, nouv.nom,
+                        nouv.type[0], nouv.type[1], nouv.type[2], nouv.type[3],
+                        nouv.etat, nouv.disponibilite, nouv.quantite);
+                tr = 1;
+            }
+            else
+            {
+                fprintf(f2, "%s %s %d %d %d %d %d %d %d \n",
+                        e.id, e.nom,
+                        e.type[0], e.type[1], e.type[2], e.type[3],
+                        e.etat, e.disponibilite, e.quantite);
+            }
+        }
+    }
+
+    fclose(f);
+    fclose(f2);
+    remove(filename);
+    rename("nouv.txt", filename);
+    return tr;
+}
+//supprimer un equipement
+int supprimer_equip(char *filename, char *id)
+{
+    int tr = 0;
+    equip e;
+    FILE *f = fopen(filename, "r");
+    FILE *f2 = fopen("nouv.txt", "w");
+
+    if (f != NULL && f2 != NULL)
+    {
+        while (fscanf(f, "%s %s %d %d %d %d %d %d %d \n",
+                      e.id, e.nom,
+                      &e.type[0], &e.type[1], &e.type[2], &e.type[3],
+                      &e.etat, &e.disponibilite, &e.quantite) != EOF)
+        {
+            if (strcmp(e.id, id)==0)
+                tr = 1; // trouvé, on ne recopie pas
+            else
+                fprintf(f2, "%s %s %d %d %d %d %d %d %d \n",
+                        e.id, e.nom,
+                        e.type[0], e.type[1], e.type[2], e.type[3],
+                        e.etat, e.disponibilite, e.quantite);
+        }
+    }
+
+    fclose(f);
+    fclose(f2);
+    remove(filename);
+    rename("nouv.txt", filename);
+    return tr;
+}
+//chercher un equipement 
+equip chercher(char *filename, char *id)
+{
+    equip e;
+    FILE *f = fopen(filename, "r");
+
+    if (f != NULL)
+    {
+        while (fscanf(f, "%s %s %d %d %d %d %d %d %d \n",
+                      e.id, e.nom,
+                      &e.type[0], &e.type[1], &e.type[2], &e.type[3],
+                      &e.etat, &e.disponibilite, &e.quantite) != EOF)
+        {
+            if (strcmp(e.id, id)==0)
+	{
+	fclose(f);
+	return e;
+	}
+
+        }
+        fclose(f);
+}
+    
+
+   
+    strcpy(e.id,"-"); // si non trouvé
+    e.nom[0] = '\0';
+    e.type[0] = e.type[1] = e.type[2] = e.type[3] = 0;
+    e.etat = 0;
+    e.disponibilite = 0;
+    e.quantite = 0;
+    return e;
+}
+// afficher les equipements disponibles 
+void afficher_equipements_disponibles(char *filename)
+{
+    equip e;
+    FILE *f = fopen(filename, "r");
+    
+    printf("\n--- EQUIPEMENTS DISPONIBLES ---\n");
+    if (f != NULL)
+    {
+        while (fscanf(f, "%s %s %d %d %d %d %d %d %d \n",
+                      e.id, e.nom,
+                      &e.type[0], &e.type[1], &e.type[2], &e.type[3],
+                      &e.etat, &e.disponibilite, &e.quantite) != EOF)
+        {
+            if (e.quantite > 0 && e.etat == 0) // Quantité > 0 et état disponible
+            {
+                printf("ID: %s | Nom: %s | Types: [%d %d %d %d] | Disp: %d | Qté: %d\n",
+                       e.id, e.nom,
+                       e.type[0], e.type[1], e.type[2], e.type[3],
+                       e.disponibilite, e.quantite);
+            }
+        }
+        fclose(f);
+    }
+    else
+    {
+        printf("Aucun équipement disponible.\n");
+    }
+}
+//reserver un equipement 
+int reserver_equip(char *filename_equip, char *filename_reserv, char *id, int quantite, char *nom_client, char *creneaux)
+{
+    // Vérifier si l'équipement existe
+    equip e = chercher(filename_equip, id);
+    if (strcmp(e.id, "-") == 0)
+    {
+        printf("Équipement introuvable!\n");
+        return 0;
+    }
+    
+    // Vérifier la quantité disponible
+    if (e.quantite < quantite)
+    {
+        printf("Quantité insuffisante! Disponible: %d\n", e.quantite);
+        return 0;
+    }
+    
+    // Mettre à jour la quantité (décrémentation)
+    e.quantite -= quantite;
+    if (!modifier_equip(filename_equip, id, e))
+    {
+        printf("Erreur lors de la mise à jour!\n");
+        return 0;
+    }
+    
+    // Ajouter la réservation
+    FILE *f = fopen(filename_reserv, "a");
+    if (f != NULL)
+    {
+        reservation r;
+        strcpy(r.id_equip, id);
+        strcpy(r.nom_client, nom_client);
+        r.quantite_reservee = quantite;
+	strcpy(r.creneaux,creneaux);
+           
+        fprintf(f, "%s %s %d %s\n", r.id_equip, r.nom_client, r.quantite_reservee, r.creneaux);
+        fclose(f);
+        
+        printf("Réservation réussie pour %s! Quantité réservée: %d\n", nom_client, quantite);
+        return 1;
+    }
+    return 0;
+}
+//afficher les reservations 
+void afficher_reservations(char *filename_reserv)
+{
+    reservation r;
+    FILE *f = fopen(filename_reserv, "r");
+    
+    printf("\n--- MES RESERVATIONS ---\n");
+    if (f != NULL)
+    {
+        while (fscanf(f, "%s %s %d %s\n",
+                      r.id_equip, r.nom_client, &r.quantite_reservee, r.creneaux) != EOF)
+        {
+            printf("ID Équipement: %s | Client: %s | Quantité: %d | Duree: \n",
+                   r.id_equip, r.nom_client, r.quantite_reservee);
+	if (r.creneaux[0]=='1') printf("Matin");
+	if (r.creneaux[1]=='1') printf("Midi");
+	if (r.creneaux[2]=='1') printf("Soir");
+	printf("\n");
+	
+        }
+        fclose(f);
+    }
+    else
+    {
+        printf("Aucune réservation trouvée.\n");
+    }
+}
+//annuler une reservation 
+int annuler_reservation(char *filename_reserv, char *id_equip)
+{
+    int tr = 0;
+    reservation r;
+    FILE *f = fopen(filename_reserv, "r");
+    FILE *f2 = fopen("nouv_reserv.txt", "w");
+
+    if (f != NULL && f2 != NULL)
+    {
+        while (fscanf(f, "%s %s %d %s\n",
+                      r.id_equip, r.nom_client, &r.quantite_reservee, r.creneaux) != EOF)
+        {
+            if (strcmp(r.id_equip, id_equip) == 0)
+                tr = 1;
+            else
+                fprintf(f2, "%s %s %d %s\n", r.id_equip, r.nom_client, r.quantite_reservee, r.creneaux);
+        }
+        fclose(f);
+        fclose(f2);
+        remove(filename_reserv);
+        rename("nouv_reserv.txt", filename_reserv);
+    }
+    return tr;
+}
+
+/* Création des colonnes une seule fois */
+static void
+init_columns_if_needed(GtkTreeView *liste)
+{
+    GtkTreeModel *model = gtk_tree_view_get_model(liste);
+    if (model != NULL)
+        return; /* colonnes déjà créées */
+
+    GtkCellRenderer   *renderer;
+    GtkTreeViewColumn *column;
+
+    /* Colonne ID */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("ID",
+                                                      renderer,
+                                                      "text", COL_ID,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+
+    /* Colonne Nom */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Nom",
+                                                      renderer,
+                                                      "text", COL_NOM,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+
+    /* Type */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Type",
+                                                      renderer,
+                                                      "text", COL_TYPE,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+
+    /* Colonne Etat (texte) */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Etat",
+                                                      renderer,
+                                                      "text", COL_ETAT,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+
+    /* Disponibilite */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Disponibilite",
+                                                      renderer,
+                                                      "text", COL_DISPO,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+
+    /* Colonne Quantite */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Quantite",
+                                                      renderer,
+                                                      "text", COL_QUANTITE,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+}
+
+/* Afficher tous les équipements dans la treeview */
+void afficher_equipements_tree(GtkTreeView *liste, const char *filename)
+{
+    GtkListStore *store;
+    GtkTreeIter   iter;
+    equip         e;
+    char          txt_type[64];
+    char          txt_etat[32];
+    char          txt_dispo[32];
+    char          txt_qte[16];
+
+    init_columns_if_needed(liste);
+
+    store = gtk_list_store_new(N_COLUMNS,
+                               G_TYPE_STRING,  /* ID   */
+                               G_TYPE_STRING,  /* Nom  */
+			       G_TYPE_STRING,  /* Type */
+                               G_TYPE_STRING,  /* Etat */
+			       G_TYPE_STRING,  /* Dispo */
+                               G_TYPE_STRING); /* Quantite (texte) */
+
+    FILE *f = fopen(filename, "r");
+    if (f != NULL)
+    {
+        while (fscanf(f, "%s %s %d %d %d %d %d %d %d\n",
+                      e.id, e.nom,
+                      &e.type[0], &e.type[1], &e.type[2], &e.type[3],
+                      &e.etat, &e.disponibilite, &e.quantite) != EOF)
+        {
+            /* Type : construit une chaîne à partir des 4 cases */
+            txt_type[0] = '\0';
+            if (e.type[0]) strcat(txt_type, "musculation ");
+            if (e.type[1]) strcat(txt_type, "cardio ");
+            if (e.type[2]) strcat(txt_type, "materiaux ");
+            if (e.type[3]) strcat(txt_type, "complementaire");
+            if (e.etat == 0)
+                strcpy(txt_etat, "fonctionnel");
+            else
+                strcpy(txt_etat, "panne");
+            /* Disponibilite */
+            if (e.disponibilite == 0)      strcpy(txt_dispo, "reserver");
+            else if (e.disponibilite == 1) strcpy(txt_dispo, "libre");
+            else                           strcpy(txt_dispo, "maintenance");
+
+            sprintf(txt_qte, "%d", e.quantite);
+
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter,
+                               COL_ID,      e.id,
+                               COL_NOM,     e.nom,
+			       COL_TYPE,     txt_type,
+                               COL_ETAT,    txt_etat,
+			       COL_DISPO,    txt_dispo,
+                               COL_QUANTITE, txt_qte,
+                               -1);
+        }
+        fclose(f);
+    }
+
+    gtk_tree_view_set_model(liste, GTK_TREE_MODEL(store));
+    g_object_unref(store);
+}
+
+/* Afficher seulement l’équipement d’un ID donné */
+void afficher_equipement_par_id_tree(GtkTreeView *liste,
+                                     const char *filename,
+                                     const char *id)
+{
+    GtkListStore *store;
+    GtkTreeIter   iter;
+    equip         e;
+    char          txt_type[64];
+    char          txt_etat[32];
+    char          txt_dispo[32];
+    char          txt_qte[16];
+
+    init_columns_if_needed(liste);
+
+    store = gtk_list_store_new(N_COLUMNS,
+                               G_TYPE_STRING,
+                               G_TYPE_STRING,
+			       G_TYPE_STRING,
+                               G_TYPE_STRING,
+			       G_TYPE_STRING,  
+                               G_TYPE_STRING);
+
+    /* on réutilise chercher() */
+    e = chercher((char *)filename, (char *)id);
+
+    if (strcmp(e.id, "-") != 0)    /* trouvé */
+    {
+        /* Construire le texte du type */
+        txt_type[0] = '\0';
+        if (e.type[0]) strcat(txt_type, "musculation ");
+        if (e.type[1]) strcat(txt_type, "cardio ");
+        if (e.type[2]) strcat(txt_type, "materiaux ");
+        if (e.type[3]) strcat(txt_type, "complementaire.");
+        if (e.etat == 0)
+            strcpy(txt_etat, "fonctionnel");
+        else
+            strcpy(txt_etat, "panne");
+
+        /* Disponibilité (selon le codage que tu as choisi) */
+        if (e.disponibilite == 0)      strcpy(txt_dispo, "reserver");
+        else if (e.disponibilite == 1) strcpy(txt_dispo, "libre");
+        else                           strcpy(txt_dispo, "maintenance");
+
+        sprintf(txt_qte, "%d", e.quantite);
+
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+                           COL_ID,       e.id,
+                           COL_NOM,      e.nom,
+			   COL_TYPE,     txt_type,
+                           COL_ETAT,     txt_etat,
+			   COL_DISPO,    txt_dispo,
+                           COL_QUANTITE, txt_qte,
+                           -1);
+    }
+
+    gtk_tree_view_set_model(liste, GTK_TREE_MODEL(store));
+    g_object_unref(store);
+}
+/* ====== LISTE DES EQUIPEMENTS DISPONIBLES (POUR FENETRE RESERVATION) ====== */
+
+/* même colonnes, même format que afficher_equipements_tree,
+   mais on filtre : quantite > 0, etat == 0 (fonctionnel) */
+void afficher_equipements_disponibles_tree(GtkTreeView *liste,
+                                           const char *filename)
+{
+    GtkListStore *store;
+    GtkTreeIter   iter;
+    equip         e;
+    char          txt_type[64];
+    char          txt_etat[32];
+    char          txt_dispo[32];
+    char          txt_qte[16];
+
+    // Créer les colonnes si nécessaire
+    init_columns_if_needed(liste);
+
+    // Créer le modèle de données
+    store = gtk_list_store_new(N_COLUMNS,
+                               G_TYPE_STRING,  /* ID */
+                               G_TYPE_STRING,  /* Nom */
+                               G_TYPE_STRING,  /* Type */
+                               G_TYPE_STRING,  /* Etat */
+                               G_TYPE_STRING,  /* Dispo */
+                               G_TYPE_STRING); /* Quantite */
+
+    FILE *f = fopen(filename, "r");
+    if (f != NULL)
+    {
+        while (fscanf(f, "%s %s %d %d %d %d %d %d %d",
+                      e.id, e.nom,
+                      &e.type[0], &e.type[1], &e.type[2], &e.type[3],
+                      &e.etat, &e.disponibilite, &e.quantite) != EOF)
+        {
+            // CONDITION POUR AFFICHER : 
+            // 1. Quantité > 0
+            // 2. État = 0 (fonctionnel)
+            // 3. Disponibilité = 1 (libre)
+            if (e.quantite > 0 && e.etat == 0 && e.disponibilite == 1)
+            {
+                // Construire le texte du type
+                txt_type[0] = '\0';
+                if (e.type[0]) strcat(txt_type, "musculation ");
+                if (e.type[1]) strcat(txt_type, "cardio ");
+                if (e.type[2]) strcat(txt_type, "materiaux ");
+                if (e.type[3]) strcat(txt_type, "complementaire");
+                
+                // Nettoyer l'espace final
+                int len = strlen(txt_type);
+                if (len > 0 && txt_type[len-1] == ' ') {
+                    txt_type[len-1] = '\0';
+                }
+
+                // État
+                strcpy(txt_etat, "fonctionnel");  // car e.etat == 0
+
+                // Disponibilité
+                strcpy(txt_dispo, "libre");  // car e.disponibilite == 1
+
+                // Quantité
+                sprintf(txt_qte, "%d", e.quantite);
+
+                // Ajouter à la liste
+                gtk_list_store_append(store, &iter);
+                gtk_list_store_set(store, &iter,
+                                   COL_ID,       e.id,
+                                   COL_NOM,      e.nom,
+                                   COL_TYPE,     txt_type,
+                                   COL_ETAT,     txt_etat,
+                                   COL_DISPO,    txt_dispo,
+                                   COL_QUANTITE, txt_qte,
+                                   -1);
+            }
+        }
+        fclose(f);
+    }
+    else
+    {
+        // Si fichier inexistant
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+                           COL_ID,       "Erreur",
+                           COL_NOM,      "Fichier introuvable",
+                           COL_TYPE,     "",
+                           COL_ETAT,     "",
+                           COL_DISPO,    "",
+                           COL_QUANTITE, "",
+                           -1);
+    }
+
+    // Connecter le modèle à la TreeView
+    gtk_tree_view_set_model(liste, GTK_TREE_MODEL(store));
+    g_object_unref(store);
+}
+
+/* Un seul équipement disponible par ID (pour la recherche à gauche) */
+void afficher_equipement_dispo_par_id_tree(GtkTreeView *liste,
+                                           const char *filename,
+                                           const char *id)
+{
+    GtkListStore *store;
+    GtkTreeIter   iter;
+    equip         e;
+    char          txt_type[64];
+    char          txt_etat[32];
+    char          txt_dispo[32];
+    char          txt_qte[16];
+    int           disponible;
+
+    init_columns_if_needed(liste);
+
+    store = gtk_list_store_new(N_COLUMNS,
+                               G_TYPE_STRING,
+                               G_TYPE_STRING,
+                               G_TYPE_STRING,
+                               G_TYPE_STRING,
+                               G_TYPE_STRING,
+                               G_TYPE_STRING);
+
+    /* on utilise chercher() */
+    e = chercher((char *)filename, (char *)id);
+
+    /* Calculer la quantité disponible réelle */
+    disponible = get_quantite_disponible((char *)filename, (char *)id);
+
+    if (strcmp(e.id, "-") != 0 && e.etat == 0 && e.disponibilite == 1 && disponible > 0)
+    {
+        txt_type[0] = '\0';
+        if (e.type[0]) strcat(txt_type, "musculation ");
+        if (e.type[1]) strcat(txt_type, "cardio ");
+        if (e.type[2]) strcat(txt_type, "materiaux ");
+        if (e.type[3]) strcat(txt_type, "complementaire");
+
+        int len = strlen(txt_type);
+        if (len > 0 && txt_type[len-1] == ' ') {
+            txt_type[len-1] = '\0';
+        }
+
+        if (e.etat == 0) strcpy(txt_etat, "fonctionnel");
+        else             strcpy(txt_etat, "panne");
+
+        if (e.disponibilite == 0)      strcpy(txt_dispo, "reserver");
+        else if (e.disponibilite == 1) strcpy(txt_dispo, "libre");
+        else                           strcpy(txt_dispo, "maintenance");
+
+         sprintf(txt_qte, "%d", disponible);
+
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+                           COL_ID,       e.id,
+                           COL_NOM,      e.nom,
+                           COL_TYPE,     txt_type,
+                           COL_ETAT,     txt_etat,
+                           COL_DISPO,    txt_dispo,
+                           COL_QUANTITE, txt_qte,
+                           -1);
+    }
+
+    else
+    {
+        // Équipement non disponible - afficher un message
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+                           COL_ID,       id,
+                           COL_NOM,      "Non disponible",
+                           COL_TYPE,     "",
+                           COL_ETAT,     "",
+                           COL_DISPO,    "",
+                           COL_QUANTITE, "0",
+                           -1);
+    }
+
+    gtk_tree_view_set_model(liste, GTK_TREE_MODEL(store));
+    g_object_unref(store);
+}
+
+/* Création des colonnes une seule fois (pour réservations) */
+static void
+init_reservations_columns_if_needed(GtkTreeView *liste)
+{
+    GtkTreeModel *model = gtk_tree_view_get_model(liste);
+    if (model != NULL)
+        return; /* colonnes déjà créées */
+
+    GtkCellRenderer   *renderer;
+    GtkTreeViewColumn *column;
+
+    /* Colonne ID Équipement */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("ID Équipement",
+                                                      renderer,
+                                                      "text", RES_COL_ID_EQUIP,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+
+    /* Colonne Nom Client */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Nom Client",
+                                                      renderer,
+                                                      "text", RES_COL_NOM_CLIENT,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+
+    /* Colonne Quantité */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Quantité",
+                                                      renderer,
+                                                      "text", RES_COL_QUANTITE,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+
+    /* Colonne Créneaux */
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes("Créneaux",
+                                                      renderer,
+                                                      "text", RES_COL_CRENEAUX,
+                                                      NULL);
+    gtk_tree_view_append_column(liste, column);
+
+
+}
+
+/* Afficher les réservations dans la treeview (avec filtrage par client) */
+void 
+afficher_reservations_tree(GtkTreeView *liste, const char *filename, const char *nom_client)
+{
+    GtkListStore *store;
+    GtkTreeIter   iter;
+    reservation   r;
+    char          txt_qte[16];
+    char          txt_creneaux[64];
+    
+
+    // Initialiser les colonnes si nécessaire
+    init_reservations_columns_if_needed(liste);
+
+    // Créer le store avec le bon nombre de colonnes
+    store = gtk_list_store_new(RES_COL_N_COLUMNS,
+                               G_TYPE_STRING,  /* ID Équipement */
+                               G_TYPE_STRING,  /* Nom Client */
+                               G_TYPE_STRING,  /* Quantité */
+                               G_TYPE_STRING);  /* Créneaux */
+                               
+
+    FILE *f = fopen(filename, "r");
+    if (f != NULL)
+    {
+        int count_total = 0;
+        int count_affiche = 0;
+        
+        while (fscanf(f, "%s %s %d %s\n",
+                      r.id_equip, r.nom_client, &r.quantite_reservee, r.creneaux) == 4)
+        {
+            count_total++;
+            
+            /* Filtrer par nom client si spécifié */
+            if (nom_client != NULL && strlen(nom_client) > 0)
+            {
+                if (strcmp(r.nom_client, nom_client) != 0)
+                    continue; /* Passer à la réservation suivante */
+            }
+            
+            /* Convertir la quantité en chaîne */
+            sprintf(txt_qte, "%d", r.quantite_reservee);
+            
+            /* Convertir les créneaux en texte lisible */
+            txt_creneaux[0] = '\0';
+            if (r.creneaux[0] == '1') strcat(txt_creneaux, "Matin ");
+            if (r.creneaux[1] == '1') strcat(txt_creneaux, "Midi ");
+            if (r.creneaux[2] == '1') strcat(txt_creneaux, "Soir");
+
+            /* Si aucun créneau sélectionné (cas improbable) */
+            if (txt_creneaux[0] == '\0') {
+                strcpy(txt_creneaux, "Non spécifié");
+            }
+            
+            /* Nettoyer l'espace final */
+            int len = strlen(txt_creneaux);
+            if (len > 0 && txt_creneaux[len-1] == ' ') {
+                txt_creneaux[len-1] = '\0';
+            }
+            
+            /* DEBUG: Afficher les données converties */
+printf("  -> Affichage: Client='%s', Créneaux='%s'\n", r.nom_client, txt_creneaux);
+            
+            /* Ajouter à la liste */
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter,
+                               RES_COL_ID_EQUIP,   r.id_equip,
+                               RES_COL_NOM_CLIENT, r.nom_client,
+                               RES_COL_QUANTITE,   txt_qte,
+                               RES_COL_CRENEAUX,   txt_creneaux,
+                               -1);
+            
+            count_affiche++;
+        }
+        fclose(f);
+        
+        printf("%d réservation(s) affichée(s) sur %d total\n", count_affiche, count_total);
+        
+        /* Si aucune réservation trouvée */
+        if (count_affiche == 0)
+        {
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter,
+                               RES_COL_ID_EQUIP,   "INFO",
+                               RES_COL_NOM_CLIENT, nom_client ? nom_client : "Aucune réservation",
+                               RES_COL_QUANTITE,   "",
+                               RES_COL_CRENEAUX,   "Vérifiez les données",
+                               -1);
+        }
+    }
+    else
+    {
+        /* Fichier inexistant */
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+                           RES_COL_ID_EQUIP,   "ERREUR",
+                           RES_COL_NOM_CLIENT, "Fichier introuvable",
+                           RES_COL_QUANTITE,   "",
+                           RES_COL_CRENEAUX,   filename,
+                           -1);
+    }
+
+    /* Connecter le modèle à la TreeView */
+    gtk_tree_view_set_model(liste, GTK_TREE_MODEL(store));
+    g_object_unref(store);
+}
+
+/* Fonction UI simplifiée (pour compatibilité avec callbacks existants) */
+void 
+afficher_mes_reservations_ui(GtkWidget *liste, const char *nom_client)
+{
+    if (liste == NULL || !GTK_IS_TREE_VIEW(liste)) {
+        g_print("Erreur: Treeview invalide\n");
+        return;
+    }
+    
+    afficher_reservations_tree(GTK_TREE_VIEW(liste), "reservations.txt", nom_client);
+}
+
+//////////////////////FIN EQUIPEMENT////////////////

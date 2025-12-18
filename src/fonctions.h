@@ -226,6 +226,76 @@ void on_nom_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_
 void on_type_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
 void on_niveau_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
 void on_coach_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
+///////////////////////EQUIPEMENT////////////////
 
+typedef struct {
+char id[16];
+char nom[80];
+int type[4];
+int etat;
+int  disponibilite;
+int quantite;
+} equip;
+//reservation un equipement
+typedef struct {
+    char id_equip[16];
+    char nom_client[80];
+    int quantite_reservee;
+    char creneaux[20];
+} reservation;
+
+/* Colonnes de la TreeView */
+enum
+{
+    COL_ID,
+    COL_NOM,
+    COL_TYPE,
+    COL_ETAT,
+    COL_DISPO,
+    COL_QUANTITE,
+    N_COLUMNS
+};
+
+/* Colonnes de la TreeView pour les RÉSERVATIONS */
+enum
+{
+    RES_COL_ID_EQUIP,
+    RES_COL_NOM_CLIENT,
+    RES_COL_QUANTITE,
+    RES_COL_CRENEAUX,
+    RES_COL_N_COLUMNS
+};
+
+int ajouter_equip(char *filename,equip e);
+int modifier_equip(char *filename,char *id, equip mouv);
+int supprimer_equip(char *filename, char *id);
+equip chercher(char *filename,char *id);
+void afficher_equipements_disponibles(char *filename);
+
+
+// Fonctions pour réservations
+int reserver_equip(char *filename_equip, char *filename_reserv, char *id, int quantite, char *nom_client, char *creneaux);
+void afficher_reservations(char *filename_reserv);
+int annuler_reservation(char *filename_reserv, char *id_equip);
+/* Fonctions d’affichage dans la TreeView */
+void afficher_equipements_tree(GtkTreeView *liste, const char *filename);
+void afficher_equipement_par_id_tree(GtkTreeView *liste,
+                                     const char *filename,
+                                     const char *id);
+/* NOUVELLES FONCTIONS POUR LA FENÊTRE 2 */
+void afficher_equipements_disponibles_tree(GtkTreeView *liste,
+                                           const char *filename);
+void afficher_equipement_dispo_par_id_tree(GtkTreeView *liste,
+                                           const char *filename,
+                                           const char *id);
+
+void afficher_equipements_disponibles_ui(GtkWidget *liste);
+void afficher_mes_reservations_ui(GtkWidget *liste, const char *nom_client);
+
+/* Fonctions pour les réservations tree */
+static void init_reservations_columns_if_needed(GtkTreeView *liste);
+void afficher_reservations_tree(GtkTreeView *liste, const char *filename, const char *nom_client);
+
+///////////FIN EQUIPEMENT//////////////////
 
 #endif

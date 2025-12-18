@@ -6164,3 +6164,1353 @@ void on_treeviewinscriptionYCH_row_activated(GtkTreeView *treeview, GtkTreePath 
 void on_treeviewinscriptionYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data) {
     // Vide mais nécessaire pour les signaux
 }
+
+
+////////////////EQUIPEMENT////////////////////
+
+// Variables globales
+GtkWidget *global_treeview_reservation = NULL;
+char nom_client_reservation[80] = "";
+// Prototypes des fonctions
+void afficher_equipements_disponibles_ui(GtkWidget *liste);
+void afficher_mes_reservations_ui(GtkWidget *liste, const char *nom_client);
+
+void
+on_retour_acceuil_clicked              (GtkButton       *button,
+                                        gpointer         user_data)
+{
+
+}
+
+
+void
+on_buttonAjouter_clicked               (GtkButton       *button,
+                                        gpointer         user_data)
+{
+GtkWidget *id, *nom, *label_status;
+    GtkWidget *chk1, *chk2, *chk3, *chk4;
+    GtkWidget *radio_dispo, *radio_reserve;
+
+    GtkWidget *spin_quantite;
+    GtkWidget *combo_dispo;
+    equip e;
+
+    // Récupération des widgets
+    id    = lookup_widget(GTK_WIDGET(button), "entryID_add");
+    nom   = lookup_widget(GTK_WIDGET(button), "entryNom_add");
+    label_status = lookup_widget(GTK_WIDGET(button), "labelStatus_add");
+    chk1 = lookup_widget(GTK_WIDGET(button), "checkType1_add");
+    chk2 = lookup_widget(GTK_WIDGET(button), "checkType2_add");
+    chk3 = lookup_widget(GTK_WIDGET(button), "checkType3_add");
+    chk4 = lookup_widget(GTK_WIDGET(button), "checkType4_add");
+    radio_dispo  = lookup_widget(GTK_WIDGET(button), "radioDisponible_add");
+    radio_reserve = lookup_widget(GTK_WIDGET(button), "radioReserve_add");
+
+    spin_quantite = lookup_widget(GTK_WIDGET(button), "spinQuantite_add");
+    combo_dispo   = lookup_widget(GTK_WIDGET(button), "comboboxentry2");
+
+    // Récupération des valeurs
+    strcpy(e.id, gtk_entry_get_text(GTK_ENTRY(id)));
+    strcpy(e.nom, gtk_entry_get_text(GTK_ENTRY(nom)));
+    e.type[0] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chk1));
+    e.type[1] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chk2));
+    e.type[2] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chk3));
+    e.type[3] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chk4));
+
+    
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_dispo)))
+        e.etat = 0;
+    else
+        e.etat = 1;
+        
+    e.quantite = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_quantite));
+    e.disponibilite = gtk_combo_box_get_active(GTK_COMBO_BOX(combo_dispo)); // 0,1,2...
+    // Appel fonction backend
+    int res = ajouter_equip("equip.txt", e);
+    if (res == 1)
+        gtk_label_set_text(GTK_LABEL(label_status), "Ajout réussi !");
+    else if (res == 2)
+        gtk_label_set_text(GTK_LABEL(label_status), "ID déjà existant !");
+    else
+        gtk_label_set_text(GTK_LABEL(label_status), "Erreur lors de l'ajout !");
+}
+
+
+void
+on_buttonannuler1_clicked              (GtkButton       *button,
+                                        gpointer         user_data)
+{
+    // Récupérer tous les widgets de la fenêtre d'ajout
+    GtkWidget *entry_id = lookup_widget(GTK_WIDGET(button), "entryID_add");
+    GtkWidget *entry_nom = lookup_widget(GTK_WIDGET(button), "entryNom_add");
+    GtkWidget *label_status = lookup_widget(GTK_WIDGET(button), "labelStatus_add");
+    GtkWidget *chk1 = lookup_widget(GTK_WIDGET(button), "checkType1_add");
+    GtkWidget *chk2 = lookup_widget(GTK_WIDGET(button), "checkType2_add");
+    GtkWidget *chk3 = lookup_widget(GTK_WIDGET(button), "checkType3_add");
+    GtkWidget *chk4 = lookup_widget(GTK_WIDGET(button), "checkType4_add");
+    GtkWidget *radio_dispo = lookup_widget(GTK_WIDGET(button), "radioDisponible_add");
+    GtkWidget *radio_reserve = lookup_widget(GTK_WIDGET(button), "radioReserve_add");
+    GtkWidget *spin_quantite = lookup_widget(GTK_WIDGET(button), "spinQuantite_add");
+    GtkWidget *combo_dispo = lookup_widget(GTK_WIDGET(button), "comboboxentry2");
+    
+    // Vider tous les champs
+    if (entry_id) gtk_entry_set_text(GTK_ENTRY(entry_id), "");
+    if (entry_nom) gtk_entry_set_text(GTK_ENTRY(entry_nom), "");
+    
+    // Décocher toutes les checkboxes
+    if (chk1) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk1), FALSE);
+    if (chk2) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk2), FALSE);
+    if (chk3) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk3), FALSE);
+    if (chk4) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk4), FALSE);
+    
+    // Mettre le radio button "Disponible" par défaut
+    if (radio_dispo) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_dispo), TRUE);
+    if (radio_reserve) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_reserve), FALSE);
+    
+    // Réinitialiser la quantité à 1
+    if (spin_quantite) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_quantite), 1);
+    
+    // Réinitialiser la combo box (sélectionner "Libre" par défaut)
+    if (combo_dispo) gtk_combo_box_set_active(GTK_COMBO_BOX(combo_dispo), 1); // 1 = Libre
+    
+    // Réinitialiser le message de statut
+    if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "");
+    
+    g_print("Champs d'ajout vidés avec succès\n");
+}
+
+
+void
+on_radioDisponible_add_toggled         (GtkToggleButton *togglebutton,
+                                        gpointer         user_data)
+{
+
+}
+
+
+void
+on_radioReserve_add_toggled            (GtkToggleButton *togglebutton,
+                                        gpointer         user_data)
+{
+
+}
+
+
+void
+on_buttonannuler2_clicked              (GtkButton       *button,
+                                        gpointer         user_data)
+{
+    // Récupérer tous les widgets de la fenêtre de modification
+    GtkWidget *entry_id = lookup_widget(GTK_WIDGET(button), "entryID_mod");
+    GtkWidget *entry_nom = lookup_widget(GTK_WIDGET(button), "entryNom_mod");
+    GtkWidget *label_status = lookup_widget(GTK_WIDGET(button), "labelStatus_mod");
+    GtkWidget *chk1 = lookup_widget(GTK_WIDGET(button), "checkType1_mod");
+    GtkWidget *chk2 = lookup_widget(GTK_WIDGET(button), "checkType2_mod");
+    GtkWidget *chk3 = lookup_widget(GTK_WIDGET(button), "checkType3_mod");
+    GtkWidget *chk4 = lookup_widget(GTK_WIDGET(button), "checkType4_mod");
+    GtkWidget *radio_dispo = lookup_widget(GTK_WIDGET(button), "radioDisponible_mod");
+    GtkWidget *radio_reserve = lookup_widget(GTK_WIDGET(button), "radioReserve_mod");
+    GtkWidget *spin_quantite = lookup_widget(GTK_WIDGET(button), "spinQuantite_mod");
+    GtkWidget *combo_dispo = lookup_widget(GTK_WIDGET(button), "comboboxentry1");
+    
+    // Vider tous les champs
+    if (entry_id) gtk_entry_set_text(GTK_ENTRY(entry_id), "");
+    if (entry_nom) gtk_entry_set_text(GTK_ENTRY(entry_nom), "");
+    
+    // Décocher toutes les checkboxes
+    if (chk1) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk1), FALSE);
+    if (chk2) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk2), FALSE);
+    if (chk3) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk3), FALSE);
+    if (chk4) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk4), FALSE);
+    
+    // Mettre le radio button "Disponible" par défaut
+    if (radio_dispo) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_dispo), TRUE);
+    if (radio_reserve) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_reserve), FALSE);
+    
+    // Réinitialiser la quantité à 0
+    if (spin_quantite) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_quantite), 0);
+    
+    // Réinitialiser la combo box (pas de sélection)
+    if (combo_dispo) gtk_combo_box_set_active(GTK_COMBO_BOX(combo_dispo), -1);
+    
+    // Réinitialiser le message de statut
+    if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "");
+    
+    g_print("Champs de modification vidés avec succès\n");
+}
+
+
+void
+on_buttonModifier_clicked              (GtkButton       *button,
+                                        gpointer         user_data)
+{
+    GtkWidget *id, *nom, *label_status;
+    GtkWidget *chk1, *chk2, *chk3, *chk4;
+    GtkWidget *radio_dispo, *radio_reserve;
+    GtkWidget *spin_quantite;
+    GtkWidget *combo_dispo;
+    equip nouv;
+    char id_old[16];
+
+    id = lookup_widget(GTK_WIDGET(button), "entryID_mod");
+    nom = lookup_widget(GTK_WIDGET(button), "entryNom_mod");
+    label_status = lookup_widget(GTK_WIDGET(button), "labelStatus_mod");
+    chk1 = lookup_widget(GTK_WIDGET(button), "checkType1_mod");
+    chk2 = lookup_widget(GTK_WIDGET(button), "checkType2_mod");
+    chk3 = lookup_widget(GTK_WIDGET(button), "checkType3_mod");
+    chk4 = lookup_widget(GTK_WIDGET(button), "checkType4_mod");
+    radio_dispo = lookup_widget(GTK_WIDGET(button), "radioDisponible_mod");
+    radio_reserve = lookup_widget(GTK_WIDGET(button), "radioReserve_mod");
+    spin_quantite = lookup_widget(GTK_WIDGET(button), "spinQuantite_mod");
+    combo_dispo   = lookup_widget(GTK_WIDGET(button), "comboboxentry1");
+
+    // ID
+    strcpy(id_old, gtk_entry_get_text(GTK_ENTRY(id)));
+    strcpy(nouv.id, id_old);
+
+    // Autres champs
+    strcpy(nouv.nom, gtk_entry_get_text(GTK_ENTRY(nom)));
+    nouv.type[0] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chk1));
+    nouv.type[1] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chk2));
+    nouv.type[2] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chk3));
+    nouv.type[3] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chk4));
+    
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_dispo)))
+        nouv.etat = 0;
+    else
+        nouv.etat = 1;
+
+    nouv.quantite = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_quantite));
+    nouv.disponibilite = gtk_combo_box_get_active(GTK_COMBO_BOX(combo_dispo));
+
+    // Appel fonction backend
+    if (modifier_equip("equip.txt", id_old, nouv)) {
+        gtk_label_set_text(GTK_LABEL(label_status), "Modification reussie !");
+    } else {
+        gtk_label_set_text(GTK_LABEL(label_status), "Echec modification !");
+    }
+}
+
+
+void
+on_buttonRechercherMod_clicked         (GtkButton       *button,
+                                        gpointer         user_data)
+{
+    GtkWidget *entry_id, *entry_nom, *label_status;
+    GtkWidget *chk1, *chk2, *chk3, *chk4;
+    GtkWidget *radio_dispo, *radio_reserve;
+    GtkWidget *spin_quantite;
+    GtkWidget *combo_dispo;
+    equip e;
+    char id_rech[16];
+
+    // Récupération widgets
+    entry_id = lookup_widget(GTK_WIDGET(button), "entryID_mod");
+    entry_nom = lookup_widget(GTK_WIDGET(button), "entryNom_mod");
+    label_status = lookup_widget(GTK_WIDGET(button), "labelStatus_mod");
+    chk1 = lookup_widget(GTK_WIDGET(button), "checkType1_mod");
+    chk2 = lookup_widget(GTK_WIDGET(button), "checkType2_mod");
+    chk3 = lookup_widget(GTK_WIDGET(button), "checkType3_mod");
+    chk4 = lookup_widget(GTK_WIDGET(button), "checkType4_mod");
+    radio_dispo = lookup_widget(GTK_WIDGET(button), "radioDisponible_mod");
+    radio_reserve = lookup_widget(GTK_WIDGET(button), "radioReserve_mod");
+    spin_quantite = lookup_widget(GTK_WIDGET(button), "spinQuantite_mod");
+    combo_dispo  = lookup_widget(GTK_WIDGET(button), "comboboxentry1");
+
+    strcpy(id_rech, gtk_entry_get_text(GTK_ENTRY(entry_id)));
+
+    // Appel fonction backend
+    e = chercher("equip.txt", id_rech);
+
+    if (strcmp(e.id, "-") == 0) {
+        gtk_label_set_text(GTK_LABEL(label_status), "Equipement introuvable");
+        
+        // Vider les champs si équipement non trouvé
+        gtk_entry_set_text(GTK_ENTRY(entry_nom), "");
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk1), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk2), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk3), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk4), FALSE);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_quantite), 0);
+        gtk_combo_box_set_active(GTK_COMBO_BOX(combo_dispo), -1); // rien sélectionné
+        return;
+    }
+    
+    // Remplir les champs avec les données trouvées
+    gtk_label_set_text(GTK_LABEL(label_status), "Équipement trouvé !");
+    gtk_entry_set_text(GTK_ENTRY(entry_nom), e.nom);
+    
+    // Cocher les types
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk1), e.type[0]);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk2), e.type[1]);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk3), e.type[2]);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chk4), e.type[3]);
+    
+    // Sélectionner le radio button approprié
+    if (e.etat == 0) {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_dispo), TRUE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_reserve), FALSE);
+    } else {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_dispo), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_reserve), TRUE);
+    }
+    
+    // Définir la quantité
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_quantite), e.quantite);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(combo_dispo), e.disponibilite);
+}
+
+
+void
+on_radioDisponible_mod_toggled         (GtkToggleButton *togglebutton,
+                                        gpointer         user_data)
+{
+
+}
+
+
+void
+on_treeview1_row_activated             (GtkTreeView     *treeview,
+                                        GtkTreePath     *path,
+                                        GtkTreeViewColumn *column,
+                                        gpointer         user_data)
+{
+    GtkTreeModel *model;
+    GtkTreeIter   iter;
+    gchar        *id;
+
+    model = gtk_tree_view_get_model(treeview);
+
+    if (!gtk_tree_model_get_iter(model, &iter, path))
+        return;
+
+    /* lire l'ID de la ligne */
+    gtk_tree_model_get(model, &iter,
+                       COL_ID, &id,
+                       -1);
+
+    /* fenêtre parente */
+    GtkWidget *parent = gtk_widget_get_toplevel(GTK_WIDGET(treeview));
+
+    /* boîte de dialogue de confirmation */
+    GtkWidget *dialog = gtk_message_dialog_new(
+        GTK_WINDOW(parent),
+        GTK_DIALOG_MODAL,
+        GTK_MESSAGE_QUESTION,
+        GTK_BUTTONS_YES_NO,
+        "Voulez-vous vraiment supprimer l'équipement %s ?", id
+    );
+
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+
+    if (response == GTK_RESPONSE_YES)
+    {
+        /* suppression dans le fichier */
+        supprimer_equip("equip.txt", id);
+
+        /* recharger la liste complète après suppression */
+        afficher_equipements_tree(treeview, "equip.txt");
+    }
+
+    gtk_widget_destroy(dialog);
+    g_free(id);
+}
+
+
+void
+on_on_button_recherche_clicked_clicked (GtkButton       *button,
+                                        gpointer         user_data)
+{
+    GtkWidget *entry_id, *treeview;
+    char id_rech[16];
+
+    entry_id = lookup_widget(GTK_WIDGET(button), "entryID_search");
+    treeview = lookup_widget(GTK_WIDGET(button), "treeview1");
+
+    strcpy(id_rech, gtk_entry_get_text(GTK_ENTRY(entry_id)));
+
+    /* si champ vide → afficher tout */
+    if (strlen(id_rech) == 0)
+        afficher_equipements_tree(GTK_TREE_VIEW(treeview), "equip.txt");
+    else
+        afficher_equipement_par_id_tree(GTK_TREE_VIEW(treeview),
+                                        "equip.txt",
+                                        id_rech);
+}
+
+
+void
+on_afficher_liste__clicked             (GtkButton       *button,
+                                        gpointer         user_data)
+{
+ GtkWidget *treeview;
+
+    /* ID exact de la treeview dans Glade (normalement "treeview1") */
+    treeview = lookup_widget(GTK_WIDGET(button), "treeview1");
+
+    afficher_equipements_tree(GTK_TREE_VIEW(treeview), "equip.txt");
+}
+
+
+// Fonction pour initialiser et afficher les équipements disponibles
+// Fonction pour initialiser et afficher les équipements disponibles
+void afficher_equipements_disponibles_ui(GtkWidget *liste)
+{
+    if (liste == NULL || !GTK_IS_TREE_VIEW(liste)) {
+        g_print("Erreur: Treeview invalide\n");
+        return;
+    }
+    
+    // 1. Créer ou vider le modèle
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(liste));
+    GtkListStore *store;
+    
+    if (model == NULL) {
+        // Créer un nouveau store avec 6 colonnes
+        store = gtk_list_store_new(6, 
+            G_TYPE_STRING,  // ID (0)
+            G_TYPE_STRING,  // Nom (1)
+            G_TYPE_STRING,  // Type (2)
+            G_TYPE_STRING,  // État (3)
+            G_TYPE_STRING,  // Disponibilité (4)
+            G_TYPE_INT      // Quantité (5)
+        );
+        
+        // Créer les colonnes
+        GtkCellRenderer *renderer;
+        GtkTreeViewColumn *column;
+        
+        // Colonne ID
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("ID", renderer, "text", 0, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(liste), column);
+        
+        // Colonne Nom
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Nom", renderer, "text", 1, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(liste), column);
+        
+        // Colonne Type
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Type", renderer, "text", 2, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(liste), column);
+        
+        // Colonne État
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("État", renderer, "text", 3, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(liste), column);
+        
+        // Colonne Disponibilité
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Disponibilité", renderer, "text", 4, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(liste), column);
+        
+        // Colonne Quantité
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Quantité", renderer, "text", 5, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(liste), column);
+        
+    } else {
+        // Utiliser le store existant et le vider
+        store = GTK_LIST_STORE(model);
+        gtk_list_store_clear(store);
+    }
+    
+    // 2. Lire le fichier et ajouter les équipements disponibles
+    FILE *f = fopen("equip.txt", "r");
+    if (f == NULL) {
+        g_print("Attention: Fichier equip.txt introuvable ou vide\n");
+        
+        // Ajouter une ligne d'information
+        GtkTreeIter iter;
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+            0, "INFO",
+            1, "Aucun équipement trouvé",
+            2, "",
+            3, "",
+            4, "",
+            5, 0,
+            -1);
+        
+        if (model == NULL) {
+            gtk_tree_view_set_model(GTK_TREE_VIEW(liste), GTK_TREE_MODEL(store));
+        }
+        g_object_unref(store);
+        return;
+    }
+    
+    // 3. Parcourir le fichier et ajouter les équipements disponibles
+    equip e;
+    int count = 0;
+    
+    while (fscanf(f, "%s %s %d %d %d %d %d %d %d",
+                  e.id, e.nom,
+                  &e.type[0], &e.type[1], &e.type[2], &e.type[3],
+                  &e.etat, &e.disponibilite, &e.quantite) == 9) {
+        
+        // Vérifier si l'équipement est disponible
+        if (e.quantite > 0 && e.etat == 0 && e.disponibilite == 1) {
+            GtkTreeIter iter;
+            
+            // Construire la chaîne de type
+            char type_str[100] = "";
+            if (e.type[0]) strcat(type_str, "Musculation ");
+            if (e.type[1]) strcat(type_str, "Cardio ");
+            if (e.type[2]) strcat(type_str, "Matériaux ");
+            if (e.type[3]) strcat(type_str, "Complémentaire");
+            
+            // Nettoyer l'espace final si présent
+            int len = strlen(type_str);
+            if (len > 0 && type_str[len-1] == ' ') {
+                type_str[len-1] = '\0';
+            }
+            
+            // Déterminer l'état et la disponibilité
+            char etat_str[20] = "Fonctionnel";  // e.etat == 0
+            char disp_str[20] = "Libre";        // e.disponibilite == 1
+            
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter,
+                0, e.id,
+                1, e.nom,
+                2, type_str,
+                3, etat_str,
+                4, disp_str,
+                5, e.quantite,
+                -1);
+            
+            count++;
+        }
+    }
+    
+    fclose(f);
+    
+    // 4. Si aucun équipement trouvé, afficher un message
+    if (count == 0) {
+        GtkTreeIter iter;
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+            0, "INFO",
+            1, "Aucun équipement disponible",
+            2, "Vérifiez les stocks ou l'état",
+            3, "",
+            4, "",
+            5, 0,
+            -1);
+    }
+    
+    // 5. Connecter le modèle au treeview si ce n'est pas déjà fait
+    if (model == NULL) {
+        gtk_tree_view_set_model(GTK_TREE_VIEW(liste), GTK_TREE_MODEL(store));
+    }
+    
+    if (model != NULL) {
+        g_object_unref(store);
+    }
+    
+    g_print("%d équipement(s) disponible(s) affiché(s)\n", count);
+}
+
+
+void
+on_treeview_equip_disp_row_activated   (GtkTreeView     *treeview,
+                                        GtkTreePath     *path,
+                                        GtkTreeViewColumn *column,
+                                        gpointer         user_data)
+{
+
+}
+
+
+void
+on_button_reserver_clicked             (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  // Variables locales
+    GtkWidget *entry_id, *entry_nom_client, *entry_nom_equip, *spin_quantite;
+    GtkWidget *radio_matin, *radio_midi, *radio_soir;
+    GtkWidget *label_status;
+    char id_equip[16];
+    char nom_client[80];
+    int quantite;
+    char creneaux[4] = "000";
+    
+    // 1. Obtenir la fenêtre parente
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    if (window == NULL || !GTK_IS_WINDOW(window)) {
+        g_print("ERREUR: Impossible de trouver la fenêtre parente\n");
+        return;
+    }
+    
+    // 2. Récupération des widgets - MÊME MODÈLE QUE buttonRechercherMod
+    entry_id = lookup_widget(GTK_WIDGET(button), "entry_ID_reserver");
+    entry_nom_equip = lookup_widget(GTK_WIDGET(button), "entry_nom_reserver");
+    spin_quantite = lookup_widget(GTK_WIDGET(button), "spinbutton_reserver");
+    label_status = lookup_widget(GTK_WIDGET(button), "label_status_reservation");
+    radio_matin = lookup_widget(GTK_WIDGET(button), "radiobutton_reserver1");
+    radio_midi = lookup_widget(GTK_WIDGET(button), "radiobutton_reserver2");
+    radio_soir = lookup_widget(GTK_WIDGET(button), "radiobutton_reserver3");
+    
+    // 3. Récupération des valeurs
+    strcpy(id_equip, gtk_entry_get_text(GTK_ENTRY(entry_id)));
+    strcpy(nom_client, gtk_entry_get_text(GTK_ENTRY(entry_nom_equip)));
+    quantite = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_quantite));
+    
+    // 4. Vérification des champs obligatoires
+    if (strlen(id_equip) == 0) {
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Veuillez entrer un ID d'équipement!");
+        g_print("ERREUR: ID équipement vide\n");
+        return;
+    }
+    
+    if (strlen(nom_client) == 0) {
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Veuillez entrer votre nom!");
+        g_print("ERREUR: Nom client vide\n");
+        return;
+    }
+    
+    if (quantite <= 0) {
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Veuillez sélectionner une quantité valide!");
+        g_print("ERREUR: Quantité invalide (%d)\n", quantite);
+        return;
+    }
+    
+    // 5. Vérification des créneaux
+    gboolean matin = radio_matin ? gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_matin)) : FALSE;
+    gboolean midi = radio_midi ? gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_midi)) : FALSE;
+    gboolean soir = radio_soir ? gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_soir)) : FALSE;
+    
+    if (!matin && !midi && !soir) {
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Veuillez sélectionner au moins un créneau!");
+        g_print("ERREUR: Aucun créneau sélectionné\n");
+        return;
+    }
+    
+ // Construire la chaîne des créneaux
+creneaux[0] = matin ? '1' : '0';
+creneaux[1] = midi ? '1' : '0';
+creneaux[2] = soir ? '1' : '0';
+creneaux[3] = '\0'; // Terminaison de chaîne
+    
+    g_print("Données de réservation:\n");
+    g_print("  ID équipement: %s\n", id_equip);
+    g_print("  Nom de équipement: %s\n", nom_client);
+    g_print("  Quantité: %d\n", quantite);
+    g_print("  Créneaux: %s (Matin:%d, Midi:%d, Soir:%d)\n", creneaux, matin, midi, soir);
+    
+    // 6. Vérifier que l'équipement existe et est disponible
+    equip e = chercher("equip.txt", id_equip);
+    
+    if (strcmp(e.id, "-") == 0) {
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Équipement introuvable!");
+        g_print("ÉCHEC: Équipement introuvable\n");
+        return;
+    }
+    
+    g_print("Équipement trouvé: ID=%s, Qté=%d, État=%d, Disp=%d\n", 
+           e.id, e.quantite, e.etat, e.disponibilite);
+    
+    if (e.quantite < quantite) {
+        char message[100];
+        sprintf(message, "Quantité insuffisante! Disponible: %d", e.quantite);
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), message);
+        g_print("ÉCHEC: Quantité insuffisante (demandée: %d, disponible: %d)\n", quantite, e.quantite);
+        return;
+    }
+    
+    if (e.etat != 0) {
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Équipement en panne!");
+        g_print("ÉCHEC: Équipement en panne\n");
+        return;
+    }
+    
+    if (e.disponibilite != 1) {
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Équipement non disponible!");
+        g_print("ÉCHEC: Équipement non disponible\n");
+        return;
+    }
+    
+    // 7. Appeler la fonction de réservation du backend
+    g_print("Appel de reserver_equip...\n");
+    int result = reserver_equip("equip.txt", "reservations.txt", 
+                               id_equip, quantite, nom_client, creneaux);
+    
+    // 8. Gérer le résultat
+    if (result == 1) {
+        g_print("SUCCÈS: Réservation enregistrée\n");
+        
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Réservation réussie!");
+        
+        // Sauvegarder le nom du client pour usage futur
+        strcpy(nom_client_reservation, nom_client);
+        
+        // Réinitialiser les champs
+        gtk_entry_set_text(GTK_ENTRY(entry_id), "");
+        if (entry_nom_equip) gtk_entry_set_text(GTK_ENTRY(entry_nom_equip), "");
+        if (spin_quantite) {
+            gtk_spin_button_set_range(GTK_SPIN_BUTTON(spin_quantite), 0, 0);
+            gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_quantite), 0);
+        }
+        
+        // Désélectionner les radiobuttons
+        if (radio_matin) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_matin), FALSE);
+        if (radio_midi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_midi), FALSE);
+        if (radio_soir) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_soir), FALSE);
+        
+        // Rafraîchir la liste des équipements disponibles
+        GtkWidget *treeview = lookup_widget(window, "treeview_equip_disp");
+        if (treeview) {
+            afficher_equipements_disponibles_ui(treeview);
+            g_print("Liste des équipements rafraîchie\n");
+        }
+        
+        // Vérifier que le fichier de réservation a été créé
+        FILE *test = fopen("reservations.txt", "r");
+        if (test) {
+            g_print("Fichier reservations.txt existe\n");
+            fclose(test);
+        } else {
+            g_print("ATTENTION: Fichier reservations.txt non trouvé après réservation\n");
+        }
+        
+    } else {
+        g_print("ÉCHEC: Réservation non enregistrée\n");
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Échec de la réservation!");
+    }
+}
+
+
+void
+on_button_mes_reservation_clicked      (GtkButton       *button,
+                                        gpointer         user_data)
+{
+GtkWidget *current_window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+// Cacher la fenêtre actuelle
+gtk_widget_hide(current_window);
+
+ GtkWidget *mes_reservations_window = create_mes_reservations();
+    
+    
+gtk_widget_show_all(mes_reservations_window);
+
+    g_object_set_data(G_OBJECT(mes_reservations_window), 
+                     "previous_window", current_window);
+}
+
+
+void
+on_button_refresh_reserver_clicked     (GtkButton       *button,
+                                        gpointer         user_data)
+{
+   // Obtenir la fenêtre parente (celle où se trouve le bouton)
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    if (window == NULL || !GTK_IS_WINDOW(window)) {
+        g_print("Erreur: Impossible de trouver la fenêtre parente\n");
+        return;
+    }
+    
+    // Chercher le treeview dans cette même fenêtre
+    GtkWidget *treeview = lookup_widget(window, "treeview_equip_disp");
+    
+    if (treeview == NULL) {
+        g_print("Erreur: Treeview 'treeview_equip_disp' non trouvé\n");
+        
+        // Pour déboguer, afficher tous les widgets disponibles
+        GList *children = gtk_container_get_children(GTK_CONTAINER(window));
+        g_print("Widgets disponibles dans la fenêtre:\n");
+        for (GList *iter = children; iter != NULL; iter = iter->next) {
+            GtkWidget *child = GTK_WIDGET(iter->data);
+            const gchar *name = gtk_widget_get_name(child);
+            g_print("  - Type: %s, Nom: %s\n", 
+                   G_OBJECT_TYPE_NAME(child),
+                   name ? name : "(sans nom)");
+        }
+        g_list_free(children);
+        return;
+    }
+    
+    // Rafraîchir la liste des équipements disponibles
+    afficher_equipements_disponibles_ui(treeview);
+    
+    g_print("Liste des équipements disponibles rafraîchie avec succès\n");
+}
+
+
+void
+on_button_rech_equip_dis_clicked       (GtkButton       *button,
+                                        gpointer         user_data)
+{
+GtkWidget *window = NULL;
+    GtkWidget *entry_recherche = NULL;
+    GtkWidget *treeview = NULL;
+    const gchar *search_id = NULL;
+    
+    // 1. Obtenir la fenêtre parente
+    window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    if (window == NULL || !GTK_IS_WINDOW(window)) {
+        g_print("Erreur: Impossible de trouver la fenêtre parente\n");
+        return;
+    }
+    
+    // 2. Chercher les widgets par leur NOM EXACT dans Glade
+    // NOTE: Vérifiez les noms exacts dans votre fichier .glade !
+    entry_recherche = lookup_widget(window, "entry_rech_equip_dis");
+    if (entry_recherche == NULL) {
+        g_print("Erreur: Widget 'entry_recherche_dispo' non trouvé\n");
+        // Essayer d'autres noms possibles
+        entry_recherche = lookup_widget(window, "entry_rech_dispo");
+        if (entry_recherche == NULL) {
+            g_print("Échec: Aucun widget d'entrée de recherche trouvé\n");
+            return;
+        }
+    }
+    
+    treeview = lookup_widget(window, "treeview_equip_disp");
+    if (treeview == NULL) {
+        g_print("Erreur: Treeview 'treeview_equip_disp' non trouvé\n");
+        // Essayer d'autres noms possibles
+        treeview = lookup_widget(window, "treeview_equip_disp");
+        if (treeview == NULL) {
+            g_print("Échec: Aucun treeview trouvé\n");
+            return;
+        }
+    }
+    
+    // 3. Récupérer le texte de recherche
+    search_id = gtk_entry_get_text(GTK_ENTRY(entry_recherche));
+    if (search_id == NULL) {
+        g_print("Erreur: Impossible de lire le texte de recherche\n");
+        return;
+    }
+    
+    g_print("Recherche de l'équipement avec ID: %s\n", search_id);
+    
+    // 4. Obtenir le modèle du treeview
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    if (model == NULL) {
+        // Si pas de modèle, afficher tous les équipements d'abord
+        g_print("Création d'un nouveau modèle...\n");
+        afficher_equipements_disponibles_ui(treeview);
+        model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    }
+    
+    if (model == NULL) {
+        g_print("Erreur: Impossible d'obtenir ou créer le modèle\n");
+        return;
+    }
+    
+    // 5. Vider le treeview
+    GtkListStore *store = GTK_LIST_STORE(model);
+    if (store == NULL) {
+        g_print("Erreur: Store invalide\n");
+        return;
+    }
+    gtk_list_store_clear(store);
+    
+    // 6. Si recherche vide, afficher tous les équipements disponibles
+    if (strlen(search_id) == 0) {
+        g_print("Recherche vide - affichage de tous les équipements\n");
+        afficher_equipements_disponibles_ui(treeview);
+        return;
+    }
+    
+    // 7. Rechercher l'équipement spécifique
+    FILE *f = fopen("equip.txt", "r");
+    if (f == NULL) {
+        g_print("Erreur: Fichier equip.txt introuvable\n");
+        
+        // Afficher un message d'erreur dans le treeview
+        GtkTreeIter iter;
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+            0, "ERREUR",
+            1, "Fichier equip.txt introuvable",
+            2, "",
+            3, "",
+            4, "",
+            5, 0,
+            -1);
+        return;
+    }
+    
+    // 8. Parcourir le fichier et ajouter les équipements correspondants
+    equip e;
+    int count = 0;
+    int found = 0;
+    
+    while (fscanf(f, "%s %s %d %d %d %d %d %d %d",
+                  e.id, e.nom,
+                  &e.type[0], &e.type[1], &e.type[2], &e.type[3],
+                  &e.etat, &e.disponibilite, &e.quantite) == 9) {
+        
+        count++;
+        
+        // Vérifier si l'équipement correspond à la recherche
+        // Recherche par ID (correspondance partielle ou complète)
+        int match = 0;
+        if (strstr(e.id, search_id) != NULL) {
+            match = 1;  // ID contient la chaîne recherchée
+        } else if (strcasecmp(e.id, search_id) == 0) {
+            match = 1;  // ID exact (insensible à la casse)
+        } else if (strstr(e.nom, search_id) != NULL) {
+            match = 1;  // Nom contient la chaîne recherchée
+        }
+        
+        // Si correspond et disponible
+        if (match && e.quantite > 0 && e.etat == 0 && e.disponibilite == 1) {
+            GtkTreeIter iter;
+            
+            // Construire la chaîne de type
+            char type_str[100] = "";
+            if (e.type[0]) strcat(type_str, "Musculation ");
+            if (e.type[1]) strcat(type_str, "Cardio ");
+            if (e.type[2]) strcat(type_str, "Matériaux ");
+            if (e.type[3]) strcat(type_str, "Complémentaire");
+            
+            // Nettoyer l'espace final si présent
+            int len = strlen(type_str);
+            if (len > 0 && type_str[len-1] == ' ') {
+                type_str[len-1] = '\0';
+            }
+            
+            // Déterminer l'état et la disponibilité
+            char etat_str[20] = "Fonctionnel";
+            char disp_str[20] = "Libre";
+            
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter,
+                0, e.id,
+                1, e.nom,
+                2, type_str,
+                3, etat_str,
+                4, disp_str,
+                5, e.quantite,
+                -1);
+            
+            found++;
+            g_print("Équipement trouvé: %s - %s (Qté: %d)\n", e.id, e.nom, e.quantite);
+        }
+    }
+    
+    fclose(f);
+    
+    // 9. Si aucun équipement trouvé, afficher un message
+    if (found == 0) {
+        GtkTreeIter iter;
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+            0, "INFO",
+            1, "Aucun équipement trouvé",
+            2, "Recherche:",
+            3, search_id,
+            4, "",
+            5, 0,
+            -1);
+        
+        g_print("Aucun équipement correspondant à '%s' trouvé\n", search_id);
+    } else {
+        g_print("%d équipement(s) trouvé(s) sur %d au total\n", found, count);
+    }
+}
+
+
+void
+on_retour_acceuil_reservation_clicked  (GtkWidget   *objet_graphique,
+                                        gpointer         user_data)
+{
+    GtkWidget *window = gtk_widget_get_toplevel(objet_graphique);
+    GtkWidget *acceuilentraineur = create_acceuilentraineur();
+    gtk_widget_show_all(acceuilentraineur);
+    gtk_widget_destroy(window);
+}
+
+
+void
+on_radiobutton_reserver1_toggled       (GtkToggleButton *togglebutton,
+                                        gpointer         user_data)
+{
+
+}
+
+
+void
+on_radiobutton_reserver2_toggled       (GtkToggleButton *togglebutton,
+                                        gpointer         user_data)
+{
+
+}
+
+
+void
+on_radiobutton_reserver3_toggled       (GtkToggleButton *togglebutton,
+                                        gpointer         user_data)
+{
+
+}
+
+
+void
+on_button_rech_reserver_clicked        (GtkButton       *button,
+                                        gpointer         user_data)
+{
+GtkWidget *entry_id, *entry_nom, *spin_quantite, *label_status;
+    GtkWidget *radio_matin, *radio_midi, *radio_soir;
+    equip e;
+    char id_rech[16];
+
+    // Récupération widgets - MÊME PATRON QUE buttonRechercherMod
+    entry_id = lookup_widget(GTK_WIDGET(button), "entry_ID_reserver");
+    entry_nom = lookup_widget(GTK_WIDGET(button), "entry_nom_reserver");
+    spin_quantite = lookup_widget(GTK_WIDGET(button), "spinbutton_reserver");
+    label_status = lookup_widget(GTK_WIDGET(button), "label_status_reservation");
+    radio_matin = lookup_widget(GTK_WIDGET(button), "radiobutton_reserver1");
+    radio_midi = lookup_widget(GTK_WIDGET(button), "radiobutton_reserver2");
+    radio_soir = lookup_widget(GTK_WIDGET(button), "radiobutton_reserver3");
+
+    // Copier l'ID exactement comme dans buttonRechercherMod
+    strcpy(id_rech, gtk_entry_get_text(GTK_ENTRY(entry_id)));
+
+    // Appel fonction backend
+    e = chercher("equip.txt", id_rech);
+
+    if (strcmp(e.id, "-") == 0) {
+        // Équipement introuvable - comme dans buttonRechercherMod
+        if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Équipement introuvable");
+        
+        // Vider les champs si équipement non trouvé
+        if (entry_nom) gtk_entry_set_text(GTK_ENTRY(entry_nom), "");
+        if (spin_quantite) {
+            gtk_spin_button_set_range(GTK_SPIN_BUTTON(spin_quantite), 0, 0);
+            gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_quantite), 0);
+        }
+        
+        // Désélectionner les radiobuttons
+        if (radio_matin) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_matin), FALSE);
+        if (radio_midi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_midi), FALSE);
+        if (radio_soir) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_soir), FALSE);
+        
+        return;
+    }
+    
+    // Remplir les champs avec les données trouvées - comme dans buttonRechercherMod
+    if (label_status) gtk_label_set_text(GTK_LABEL(label_status), "Équipement trouvé !");
+    
+    // Remplir le nom de l'équipement
+    if (entry_nom) gtk_entry_set_text(GTK_ENTRY(entry_nom), e.nom);
+    
+    // Configurer la quantité disponible
+    if (spin_quantite) {
+        // Vérifier si l'équipement est disponible (quantité > 0, état = 0, disponibilité = 1)
+        if (e.quantite > 0 && e.etat == 0 && e.disponibilite == 1) {
+            // Définir la plage de quantité (1 à quantité disponible)
+            gtk_spin_button_set_range(GTK_SPIN_BUTTON(spin_quantite), 1, e.quantite);
+            gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_quantite), 1);
+            
+            // Mettre à jour le statut si disponible
+            if (label_status) {
+                char buffer[100];
+                sprintf(buffer, "Équipement trouvé! Qté disponible: %d", e.quantite);
+                gtk_label_set_text(GTK_LABEL(label_status), buffer);
+            }
+        } else {
+            // Équipement non disponible
+            gtk_spin_button_set_range(GTK_SPIN_BUTTON(spin_quantite), 0, 0);
+            gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_quantite), 0);
+            
+            // Indiquer pourquoi il n'est pas disponible
+            if (label_status) {
+                if (e.quantite <= 0) {
+                    gtk_label_set_text(GTK_LABEL(label_status), "Équipement épuisé!");
+                } else if (e.etat != 0) {
+                    gtk_label_set_text(GTK_LABEL(label_status), "Équipement en panne!");
+                } else if (e.disponibilite != 1) {
+                    gtk_label_set_text(GTK_LABEL(label_status), "Équipement déjà réservé!");
+                }
+            }
+        }
+    }
+    
+    // Par défaut, désélectionner tous les radiobuttons
+    // (L'utilisateur devra choisir manuellement)
+    if (radio_matin) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_matin), FALSE);
+    if (radio_midi) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_midi), FALSE);
+    if (radio_soir) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_soir), FALSE);
+}
+
+
+void
+on_treeview_mes_reservation_row_activated
+                                        (GtkTreeView     *treeview,
+                                        GtkTreePath     *path,
+                                        GtkTreeViewColumn *column,
+                                        gpointer         user_data)
+{
+GtkTreeModel *model;
+    GtkTreeIter iter;
+    gchar *id_equip;
+    gchar *nom_client;
+    gchar *quantite_str;
+    
+    // Obtenir le modèle de la treeview
+    model = gtk_tree_view_get_model(treeview);
+    
+    if (!gtk_tree_model_get_iter(model, &iter, path)) {
+        g_print("ERREUR: Impossible d'obtenir l'itérateur\n");
+        return;
+    }
+    
+    // Lire les données de la ligne (selon vos colonnes de réservations)
+    gtk_tree_model_get(model, &iter,
+                       RES_COL_ID_EQUIP, &id_equip,      // Colonne 0: ID Équipement
+                       RES_COL_NOM_CLIENT, &nom_client,  // Colonne 1: Nom Client
+                       RES_COL_QUANTITE, &quantite_str,  // Colonne 2: Quantité
+                       -1);
+    
+    // Convertir la quantité en entier
+    int quantite = atoi(quantite_str);
+    
+    // Fenêtre parente
+    GtkWidget *parent = gtk_widget_get_toplevel(GTK_WIDGET(treeview));
+    
+    // Boîte de dialogue de confirmation pour ANNULER la réservation
+    GtkWidget *dialog = gtk_message_dialog_new(
+        GTK_WINDOW(parent),
+        GTK_DIALOG_MODAL,
+        GTK_MESSAGE_QUESTION,
+        GTK_BUTTONS_YES_NO,
+        "Voulez-vous vraiment annuler la réservation ?\n\n"
+        "ID: %s\n"
+        "equipement: %s\n"
+        "Quantité: %d",
+        id_equip, nom_client, quantite
+    );
+    
+    // Ajouter un titre à la boîte de dialogue
+    gtk_window_set_title(GTK_WINDOW(dialog), "Annulation de réservation");
+    
+    // Afficher la boîte de dialogue et attendre la réponse
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    
+    if (response == GTK_RESPONSE_YES) {
+        g_print("Annulation de la réservation pour l'équipement %s...\n", id_equip);
+        
+        // 1. Annuler la réservation dans le fichier reservations.txt
+        int annulation_ok = annuler_reservation("reservations.txt", id_equip);
+        
+        if (annulation_ok) {
+            g_print("✓ Réservation annulée dans reservations.txt\n");
+            
+            // 2. Rétablir la quantité de l'équipement dans equip.txt
+            equip e = chercher("equip.txt", id_equip);
+            
+            if (strcmp(e.id, "-") != 0) { // Si équipement trouvé
+                // Augmenter la quantité disponible
+                e.quantite += quantite;
+                
+                // Remettre l'état à disponible si nécessaire
+                if (e.etat != 0) e.etat = 0;
+                if (e.disponibilite != 1) e.disponibilite = 1;
+                
+                // Mettre à jour l'équipement
+                if (modifier_equip("equip.txt", id_equip, e)) {
+                    g_print("✓ Quantité rétablie pour l'équipement %s (nouvelle qté: %d)\n", 
+                           id_equip, e.quantite);
+                } else {
+                    g_print("✗ Erreur lors de la mise à jour de l'équipement\n");
+                }
+            } else {
+                g_print("⚠ Équipement %s non trouvé dans equip.txt\n", id_equip);
+            }
+            
+            // 3. Rafraîchir la liste des réservations
+            // Obtenir le nom du client pour le filtre
+            const gchar *client_filtre = NULL;
+            
+            // Si vous voulez filtrer par le client de la réservation annulée
+            // client_filtre = nom_client;
+            
+            // Rafraîchir la liste complète (ou filtrée)
+            afficher_reservations_tree(treeview, "reservations.txt", client_filtre);
+            
+            // 4. Rafraîchirretour_acceuil_reservation la liste des équipements disponibles (si la fenêtre existe)
+            GtkWidget *treeview_equip_disp = lookup_widget(parent, "treeview_equip_disp");
+            if (treeview_equip_disp) {
+                afficher_equipements_disponibles_ui(treeview_equip_disp);
+                g_print("✓ Liste des équipements disponibles rafraîchie\n");
+            }
+            
+
+            
+            // Message d'erreur
+            GtkWidget *error_dialog = gtk_message_dialog_new(
+                GTK_WINDOW(parent),
+                GTK_DIALOG_MODAL,
+                GTK_MESSAGE_ERROR,
+                GTK_BUTTONS_OK,
+                "Erreur lors de l'annulation de la réservation.\n"
+                "Vérifiez que la réservation existe toujours."
+            );
+            gtk_dialog_run(GTK_DIALOG(error_dialog));
+            gtk_widget_destroy(error_dialog);
+        }
+    } else {
+        g_print("Annulation refusée par l'utilisateur\n");
+    }
+    
+    // Nettoyer
+    gtk_widget_destroy(dialog);
+    g_free(id_equip);
+    g_free(nom_client);
+    g_free(quantite_str);     
+}
+
+
+
+
+
+
+
+void
+on_button_refresh_mes_reservation_clicked
+                                        (GtkButton       *button,
+                                        gpointer         user_data)
+{
+    // Version simple sans filtre - affiche TOUTES les réservations
+    GtkWidget *treeview = lookup_widget(GTK_WIDGET(button), "treeview_mes_reservation");
+    
+    if (treeview == NULL) {
+        g_print("ERREUR: Treeview non trouvé\n");
+        return;
+    }
+    
+    // Afficher toutes les réservations (nom_client = NULL)
+    afficher_reservations_tree(GTK_TREE_VIEW(treeview), "reservations.txt", NULL);
+}
+//////////////FIN EQUIPEMENT//////////////////////
+
+
+void
+on_equipement_clicked                  (GtkWidget       *objet_graphique,
+                                        gpointer         user_data)
+{
+    // Obtenir la fenêtre parente du bouton
+    GtkWidget *parent_window = gtk_widget_get_toplevel(objet_graphique);
+    
+    // Cacher la fenêtre actuelle
+    gtk_widget_hide(parent_window);
+    
+    // Créer et afficher la fenêtre de gestion des membres
+    GtkWidget *gestion_des_equipements = gestion_des_equipements();
+    gtk_widget_show_all(gestion_des_equipements);
+}
+
+
+void
+on_Evenement_clicked                   (GtkWidget       *objet_graphique,
+                                        gpointer         user_data)
+{
+    // Obtenir la fenêtre parente du bouton
+    GtkWidget *parent_window = gtk_widget_get_toplevel(objet_graphique);
+    
+    // Cacher la fenêtre actuelle
+    gtk_widget_hide(parent_window);
+    
+    // Créer et afficher la fenêtre de gestion des membres
+    GtkWidget *gestion_ev = create_gestion_ev();
+    gtk_widget_show_all(gestion_ev);
+}
+
+
+void
+on_cours_clicked                       (GtkWidget       *objet_graphique,
+                                        gpointer         user_data)
+{
+    // Obtenir la fenêtre parente du bouton
+    GtkWidget *parent_window = gtk_widget_get_toplevel(objet_graphique);
+    
+    // Cacher la fenêtre actuelle
+    gtk_widget_hide(parent_window);
+    
+    // Créer et afficher la fenêtre de gestion des membres
+    GtkWidget *Administrateur_gestion_de_cours = create_Administrateur_gestion_de_cours();
+    gtk_widget_show_all(Administrateur_gestion_de_cours);
+}
+
+
+void
+on_entraineur_clicked                  (GtkWidget       *objet_graphique,
+                                        gpointer         user_data)
+{
+    // Obtenir la fenêtre parente du bouton
+    GtkWidget *parent_window = gtk_widget_get_toplevel(objet_graphique);
+    
+    // Cacher la fenêtre actuelle
+    gtk_widget_hide(parent_window);
+    
+    // Créer et afficher la fenêtre de gestion des membres
+    GtkWidget *gestion_des_entraineur = create_gestion_des_entraineur();
+    gtk_widget_show_all(gestion_des_entraineur);
+}
+
+
+void
+on_button_rejoindre_cours_clicked      (GtkWidget        *objet_graphique,
+                                        gpointer         user_data)
+{
+    // Obtenir la fenêtre parente du bouton
+    GtkWidget *parent_window = gtk_widget_get_toplevel(objet_graphique);
+    
+    // Cacher la fenêtre actuelle
+    gtk_widget_hide(parent_window);
+    
+    // Créer et afficher la fenêtre de gestion des membres
+    GtkWidget *l'entraineur_s'inscrire_à_un_cours = create_l'entraineur_s'inscrire_à_un_cours();
+    gtk_widget_show_all(l'entraineur_s'inscrire_à_un_cours);
+}
+
+
+void
+on_button_reserver_equip_entr_clicked  (GtkWidget       *objet_graphique,
+                                        gpointer         user_data)
+{
+    // Obtenir la fenêtre parente du bouton
+    GtkWidget *parent_window = gtk_widget_get_toplevel(objet_graphique);
+    
+    // Cacher la fenêtre actuelle
+    gtk_widget_hide(parent_window);
+    
+    // Créer et afficher la fenêtre de gestion des membres
+    GtkWidget *reserver_un_equipement = create_reserver_un_equipement();
+    gtk_widget_show_all(reserver_un_equipement);
+
+}
+
+
+void
+on_button_inscrire_centre_clicked      (GtkWidget       *objet_graphique,
+                                        gpointer         user_data)
+{
+    // Obtenir la fenêtre parente du bouton
+    GtkWidget *parent_window = gtk_widget_get_toplevel(objet_graphique);
+    
+    // Cacher la fenêtre actuelle
+    gtk_widget_hide(parent_window);
+    
+    // Créer et afficher la fenêtre de gestion des membres
+    GtkWidget *window1 = create_window1();
+    gtk_widget_show_all(window1);
+}
+
+
+void
+on_home7_clicked                       (GtkWidget      *objet_graphique,
+                                        gpointer         user_data)
+{
+    GtkWidget *window = gtk_widget_get_toplevel(objet_graphique);
+    GtkWidget *authentification = create_authentification();
+    gtk_widget_show_all(authentification);
+    gtk_widget_destroy(window);
+}
+
