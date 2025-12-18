@@ -175,7 +175,7 @@ centre* lireTousCentres(const char *filename, int *count);
 
 void afficher_tous_centres_au_demarrage(GtkWidget *treeview);
 void
-on_button_afficher_tous_clicked        (GtkWidget      *button,
+on_button_afficher_tous1_clicked        (GtkWidget      *button,
                                         gpointer         user_data);
 
 
@@ -259,3 +259,4 @@ void sauvegarder_emploi_entraineur(GtkWidget *treeview, const char *entraineur_i
 void
 on_button51_clicked                    (GtkButton       *button,
                                         gpointer         user_data);
+

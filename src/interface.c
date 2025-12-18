@@ -1622,13 +1622,13 @@ create_gestioncentres (void)
   GtkWidget *entryadresse1;
   GtkWidget *entrytelephone;
   GtkWidget *entrycapacite;
-  GtkObject *midiajout_adj;
-  GtkWidget *midiajout;
-  GtkObject *midiajout_adj;
-  GtkWidget *midiajout;
-  GtkWidget *label69;
   GtkObject *matinajout_adj;
   GtkWidget *matinajout;
+  GtkObject *midiajout_adj;
+  GtkWidget *midiajout;
+  GtkObject *soirajout_adj;
+  GtkWidget *soirajout;
+  GtkWidget *label69;
   GtkWidget *label70;
   GtkWidget *label71;
   GtkWidget *label72;
@@ -1796,30 +1796,28 @@ create_gestioncentres (void)
   gtk_fixed_put (GTK_FIXED (fixed14), entrycapacite, 792, 432);
   gtk_widget_set_size_request (entrycapacite, 240, 40);
   gtk_entry_set_invisible_char (GTK_ENTRY (entrycapacite), 8226);
-
-  midiajout_adj = gtk_adjustment_new (0, 16, 18, 1, 10, 10);
-  midiajout = gtk_spin_button_new (GTK_ADJUSTMENT (midiajout_adj), 1, 0);
-  gtk_widget_show (midiajout);
-  gtk_fixed_put (GTK_FIXED (fixed14), midiajout, 1176, 512);
-  gtk_widget_set_size_request (midiajout, 60, 27);
-
-  midiajout_adj = gtk_adjustment_new (1, 12, 16, 1, 10, 10);
-  midiajout = gtk_spin_button_new (GTK_ADJUSTMENT (midiajout_adj), 1, 0);
-  gtk_widget_show (midiajout);
-  gtk_fixed_put (GTK_FIXED (fixed14), midiajout, 1032, 512);
-  gtk_widget_set_size_request (midiajout, 60, 27);
-
-  label69 = gtk_label_new (_("Bienvenue Dans L'espace Adminstrateur "));
-  gtk_widget_show (label69);
-  gtk_fixed_put (GTK_FIXED (fixed14), label69, 728, 0);
-  gtk_widget_set_size_request (label69, 416, 73);
-
-  matinajout_adj = gtk_adjustment_new (1, 8, 12, 1, 10, 10);
+//
+  // Heure matin (8h-12h)
+  matinajout_adj = gtk_adjustment_new (8, 8, 12, 1, 10, 10);
   matinajout = gtk_spin_button_new (GTK_ADJUSTMENT (matinajout_adj), 1, 0);
   gtk_widget_show (matinajout);
   gtk_fixed_put (GTK_FIXED (fixed14), matinajout, 880, 512);
   gtk_widget_set_size_request (matinajout, 60, 27);
 
+  // Heure midi (12h-16h)
+  midiajout_adj = gtk_adjustment_new (12, 12, 16, 1, 10, 10);
+  midiajout = gtk_spin_button_new (GTK_ADJUSTMENT (midiajout_adj), 1, 0);
+  gtk_widget_show (midiajout);
+  gtk_fixed_put (GTK_FIXED (fixed14), midiajout, 1032, 512);
+  gtk_widget_set_size_request (midiajout, 60, 27);
+
+  // Heure soir (16h-18h)
+  soirajout_adj = gtk_adjustment_new (16, 16, 18, 1, 10, 10);
+  soirajout = gtk_spin_button_new (GTK_ADJUSTMENT (soirajout_adj), 1, 0);
+  gtk_widget_show (soirajout);
+  gtk_fixed_put (GTK_FIXED (fixed14), soirajout, 1176, 512);
+  gtk_widget_set_size_request (soirajout, 60, 27);
+//
   label70 = gtk_label_new (_("ID:"));
   gtk_widget_show (label70);
   gtk_fixed_put (GTK_FIXED (fixed14), label70, 728, 128);

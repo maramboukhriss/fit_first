@@ -12,3 +12,7 @@ GtkWidget* create_acceuilentraineur (void);
 GtkWidget* create_gestioncentres (void);
 GtkWidget* create_window1 (void);
 GtkWidget* create_window2 (void);
+GtkWidget* create_l_entraineur_s_inscrire____un_cours (void);
+GtkWidget* create_gestion_des_entraineur (void);
+GtkWidget* create_login_coach (void);
+GtkWidget* create_profile_d_un_entraineur (void);

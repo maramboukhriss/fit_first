@@ -3311,7 +3311,7 @@ void afficher_tous_centres_au_demarrage(GtkWidget *treeview) {
 }
 
 void
-on_button_afficher_tous_clicked        (GtkWidget      *button,
+on_button_afficher_tous1_clicked        (GtkWidget      *button,
                                         gpointer         user_data){
     GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
     GtkWidget *treeview = lookup_widget(window, "treeview_afficher_centre");
@@ -5292,4 +5292,6 @@ void on_button99_clicked(GtkWidget *button, gpointer user_data) {
     
     g_print("DEBUG: Fenêtre login fermée\n");
 }
+
+
 
