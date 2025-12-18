@@ -3903,3 +3903,209 @@ afficher_mes_reservations_ui(GtkWidget *liste, const char *nom_client)
 }
 
 //////////////////////FIN EQUIPEMENT////////////////
+
+
+
+
+//////////gestion des evenements////////
+
+int ajouter_event(char *filename, Event e) {
+    FILE *f = fopen(filename, "a");
+    if (f != NULL) {
+        fprintf(f, "%d;%s;%s;%d;%d;%d;%s;%s;%d;%d\n",
+                e.id, e.nom, e.type, e.jour, e.mois, e.annee, 
+                e.heure, e.lieu, e.capacite_max, e.nb_inscriptions);
+        fclose(f);
+        return 1;
+    }
+    return 0;
+}
+
+int modifier_event(char *filename, int id, Event nouv) {
+    int tr = 0;
+    Event e;
+    FILE *f = fopen(filename, "r");
+    FILE *f2 = fopen("temp_event.txt", "w");
+    if (f != NULL && f2 != NULL) {
+        while (fscanf(f, "%d;%99[^;];%49[^;];%d;%d;%d;%19[^;];%99[^;];%d;%d\n",
+                     &e.id, e.nom, e.type, &e.jour, &e.mois, &e.annee,
+                     e.heure, e.lieu, &e.capacite_max, &e.nb_inscriptions) != EOF) {
+            if (e.id == id) {
+                fprintf(f2, "%d;%s;%s;%d;%d;%d;%s;%s;%d;%d\n",
+                        nouv.id, nouv.nom, nouv.type, nouv.jour, nouv.mois, nouv.annee,
+                        nouv.heure, nouv.lieu, nouv.capacite_max, nouv.nb_inscriptions);
+                tr = 1;
+            } else {
+                fprintf(f2, "%d;%s;%s;%d;%d;%d;%s;%s;%d;%d\n",
+                        e.id, e.nom, e.type, e.jour, e.mois, e.annee,
+                        e.heure, e.lieu, e.capacite_max, e.nb_inscriptions);
+            }
+        }
+        fclose(f);
+        fclose(f2);
+        remove(filename);
+        rename("temp_event.txt", filename);
+    }
+    return tr;
+}
+
+int supprimer_event(char *filename, int id) {
+    int tr = 0;
+    Event e;
+    FILE *f = fopen(filename, "r");
+    FILE *f2 = fopen("temp_event.txt", "w");
+    if (f != NULL && f2 != NULL) {
+        while (fscanf(f, "%d;%99[^;];%49[^;];%d;%d;%d;%19[^;];%99[^;];%d;%d\n",
+                     &e.id, e.nom, e.type, &e.jour, &e.mois, &e.annee,
+                     e.heure, e.lieu, &e.capacite_max, &e.nb_inscriptions) != EOF) {
+            if (e.id == id) {
+                tr = 1;
+            } else {
+                fprintf(f2, "%d;%s;%s;%d;%d;%d;%s;%s;%d;%d\n",
+                        e.id, e.nom, e.type, e.jour, e.mois, e.annee,
+                        e.heure, e.lieu, e.capacite_max, e.nb_inscriptions);
+            }
+        }
+        fclose(f);
+        fclose(f2);
+        remove(filename);
+        rename("temp_event.txt", filename);
+    }
+    return tr;
+}
+
+Event chercher_event(char *filename, int id) { 
+    Event e;
+    int tr = 0;
+    FILE *f = fopen(filename, "r");
+    if (f != NULL) {
+        while (!tr && fscanf(f, "%d;%99[^;];%49[^;];%d;%d;%d;%19[^;];%99[^;];%d;%d\n",
+                           &e.id, e.nom, e.type, &e.jour, &e.mois, &e.annee,
+                           e.heure, e.lieu, &e.capacite_max, &e.nb_inscriptions) != EOF) {
+            if (e.id == id) {
+                tr = 1;
+            }
+        }
+        fclose(f);
+    }
+    if (!tr) {
+        e.id = -1;
+    }
+    return e;
+}
+
+Event* lireTousEvenements(char *filename, int *count) {
+    FILE *f = fopen(filename, "r");
+    Event *events = NULL;
+    *count = 0;
+    Event temp;
+    
+    if (f == NULL) {
+        return NULL;
+    }
+    
+    // First pass: count the events
+    int items_read;
+    while ((items_read = fscanf(f, "%d;%99[^;];%49[^;];%d;%d;%d;%19[^;];%99[^;];%d;%d\n",
+                 &temp.id, temp.nom, temp.type, &temp.jour, &temp.mois, &temp.annee,
+                 temp.heure, temp.lieu, &temp.capacite_max, &temp.nb_inscriptions)) == 10) {
+        (*count)++;
+    }
+    
+    if (*count == 0) {
+        fclose(f);
+        return NULL;
+    }
+    
+    // Allocate memory
+    events = (Event*)malloc(*count * sizeof(Event));
+    if (events == NULL) {
+        fclose(f);
+        *count = 0;
+        return NULL;
+    }
+    
+    // Second pass: read all events
+    rewind(f);
+    int i = 0;
+    while (i < *count && fscanf(f, "%d;%99[^;];%49[^;];%d;%d;%d;%19[^;];%99[^;];%d;%d\n",
+              &events[i].id, events[i].nom, events[i].type, 
+              &events[i].jour, &events[i].mois, &events[i].annee,
+              events[i].heure, events[i].lieu, 
+              &events[i].capacite_max, &events[i].nb_inscriptions) == 10) {
+        i++;
+    }
+    
+    fclose(f);
+    
+    // Return what we could read
+    if (i == 0) {
+        free(events);
+        *count = 0;
+        return NULL;
+    }
+    
+    *count = i;  // Update count to actual number read
+    return events;
+}
+
+int verifier_capacite(char *filename, int id) {
+    Event e = chercher_event(filename, id);
+    if (e.id == -1) {
+        return -1; // Événement non trouvé
+    }
+    if (e.nb_inscriptions < e.capacite_max) {
+        return 1; // Il reste de la place
+    } else {
+        return 0; // Complet
+    }
+}
+
+/* Function to test file reading - for debugging */
+void tester_lecture_fichier(const char *filename) {
+    int count = 0;
+    Event *events = lireTousEvenements((char*)filename, &count);
+    
+    printf("=== TEST LECTURE FICHIER ===\n");
+    printf("Fichier: %s\n", filename);
+    printf("Nombre d'événements lus: %d\n", count);
+    
+    if (events != NULL) {
+        for (int i = 0; i < count; i++) {
+            printf("\nÉvénement %d:\n", i+1);
+            printf("  ID: %d\n", events[i].id);
+            printf("  Nom: %s\n", events[i].nom);
+            printf("  Type: %s\n", events[i].type);
+            printf("  Date: %02d/%02d/%d\n", events[i].jour, events[i].mois, events[i].annee);
+            printf("  Capacité: %d/%d\n", events[i].nb_inscriptions, events[i].capacite_max);
+        }
+        free(events);
+    } else {
+        printf("Aucun événement trouvé ou erreur de lecture!\n");
+    }
+    printf("============================\n");
+}
+/* Fonction pour générer un nouvel ID unique */
+int generer_id_evenement(const char *filename) {
+    int max_id = 0;
+    Event e;
+    FILE *f = fopen(filename, "r");
+    
+    if (f != NULL) {
+        while (fscanf(f, "%d;%99[^;];%49[^;];%d;%d;%d;%19[^;];%99[^;];%d;%d\n",
+                     &e.id, e.nom, e.type, &e.jour, &e.mois, &e.annee,
+                     e.heure, e.lieu, &e.capacite_max, &e.nb_inscriptions) != EOF) {
+            if (e.id > max_id) {
+                max_id = e.id;
+            }
+        }
+        fclose(f);
+    }
+    
+    return max_id + 1;
+}
+
+/* Fonction pour charger tous les événements - alias de lireTousEvenements */
+Event* chargerEvenements(const char *filename, int *count) {
+    return lireTousEvenements((char*)filename, count);
+}

@@ -461,3 +461,79 @@ on_button_inscrire_centre_clicked      (GtkButton       *button,
 void
 on_home7_clicked                       (GtkButton       *button,
                                         gpointer         user_data);
+
+///////////gestion des ev ////////////
+
+void
+on_AJOUTER_clicked                     (GtkWidget       *button,
+                                        gpointer         user_data);
+
+void
+on_Afficher_clicked                    (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_MODIFIER1_clicked                   (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_Retour_clicked                      (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_Chercher_clicked                    (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_S_inscrire_clicked                  (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_Afficher_l___v_clicked              (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_button_retour1_clicked              (GtkWidget       *button,
+                                        gpointer         user_data);
+
+void
+on_button_retour2_clicked              (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_button_chercher1_clicked            (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_button_chercher2_clicked            (GtkWidget       *button,
+                                        gpointer         user_data);
+
+void
+on_button_afficher_res_clicked         (GtkWidget        *button,
+                                        gpointer         user_data);
+
+
+
+void charger_evenement_dans_treeview(GtkWidget *treeview, Event e);
+void vider_treeview(GtkWidget *treeview);
+void afficher_message(GtkWidget *window, const char *message, const char *type);
+void set_window_pointers(GtkWidget *gestion_ev_window, GtkWidget *reservation_window);
+
+
+
+
+void
+on_Supprimer_un___venement_clicked     (GtkButton       *button,
+                                        gpointer         user_data);
+
+
+
+
+void on_button_actualiser_clicked2(GtkButton *button, gpointer user_data);
+void on_button_fermer_clicked2(GtkButton *button, gpointer user_data);
+
+/* Helper functions */
+GtkWidget* get_widget_safe(GtkWidget *window, const char *name);
+void afficher_message(GtkWidget *window, const char *message, const char *type);
+void charger_evenement_dans_treeview(GtkWidget *treeview, Event event);
+

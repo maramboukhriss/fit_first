@@ -298,4 +298,48 @@ void afficher_reservations_tree(GtkTreeView *liste, const char *filename, const 
 
 ///////////FIN EQUIPEMENT//////////////////
 
+
+
+///////////gestion des ev//////////
+
+typedef struct _GtkWidget GtkWidget;
+typedef struct {
+    int id;  // Changed from char[100] to int
+    char nom[100];
+    char type[50];  // Added type field
+    int jour;       // Changed from char[10] to int
+    int mois;       // Changed from char[10] to int
+    int annee;      // Changed from char[10] to int
+    char heure[20]; // Changed from int to string
+    char lieu[100];
+    int capacite_max;       // Changed from char[100] to int
+    int nb_inscriptions;    // Changed from char[100] to int and renamed
+   
+} Event;  // Using Event instead of evenement
+
+// Aliases for compatibility
+typedef Event evenement;
+
+// Functions for events
+int ajouter_event(char *filename, Event e);
+int modifier_event(char *filename, int id, Event nouv);  // Changed parameter type
+int supprimer_event(char *filename, int id);             // Changed parameter type
+Event chercher_event(char *filename, int id);            // Changed parameter type
+/* Dans gestion.h */
+int generer_id_evenement(const char *filename);
+Event* chargerEvenements(const char *filename, int *count);
+
+
+#define ajouterEvenement ajouter_event
+#define modifierEvenement modifier_event
+#define supprimerEvenement supprimer_event
+#define chercherEvenement chercher_event
+
+// New function declarations
+Event* lireTousEvenements(char *filename, int *count);
+void afficher_message(GtkWidget *window, const char *message, const char *type);
+void tester_lecture_fichier(const char *filename);
+
+
 #endif
+

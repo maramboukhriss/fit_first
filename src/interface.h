@@ -21,3 +21,5 @@ GtkWidget* create_S_inscrire_menbre_un_cours (void);
 GtkWidget* create_gestion_des_equipements (void);
 GtkWidget* create_reserver_un_equipement (void);
 GtkWidget* create_mes_reservations (void);
+GtkWidget* create_gestion_ev_ (void);
+GtkWidget* create_reservation (void);

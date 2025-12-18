@@ -7514,3 +7514,821 @@ on_home7_clicked                       (GtkWidget      *objet_graphique,
     gtk_widget_destroy(window);
 }
 
+
+
+/////////gestion des evenements//////////
+
+/* Fonction utilitaire pour retrouver les widgets */
+GtkWidget* lookup_widget(GtkWidget *window, const gchar *widget_name) {
+    return (GtkWidget*)g_object_get_data(G_OBJECT(window), widget_name);
+}
+/* Fonction pour afficher les messages - version corrigée */
+void afficher_message(GtkWidget *parent, const char *message, const char *type) {
+    GtkMessageType msg_type;
+    
+    if (g_strcmp0(type, "error") == 0)
+        msg_type = GTK_MESSAGE_ERROR;
+    else if (g_strcmp0(type, "warning") == 0)
+        msg_type = GTK_MESSAGE_WARNING;
+    else
+        msg_type = GTK_MESSAGE_INFO;
+    
+    GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(parent),
+                                               GTK_DIALOG_MODAL,
+                                               msg_type,
+                                               GTK_BUTTONS_OK,
+                                               "%s", message);
+    gtk_window_set_title(GTK_WINDOW(dialog), "Message");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+
+/* Fonction pour charger les événements dans le treeview */
+void charger_evenements_dans_treeview(GtkWidget *treeview) {
+    /* Vider le treeview existant */
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    if (model != NULL) {
+        GtkListStore *store = GTK_LIST_STORE(model);
+        gtk_list_store_clear(store);
+    }
+    
+    /* Créer un nouveau store si nécessaire */
+    GtkListStore *store;
+    if (model == NULL) {
+        store = gtk_list_store_new(9, 
+            G_TYPE_INT,     // ID
+            G_TYPE_STRING,  // NOM
+            G_TYPE_STRING,  // TYPE
+            G_TYPE_INT,     // JOUR
+            G_TYPE_INT,     // MOIS
+            G_TYPE_INT,     // ANNEE
+            G_TYPE_STRING,  // HEURE
+            G_TYPE_STRING,  // LIEU
+            G_TYPE_INT      // CAPACITE_MAX
+        );
+        
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        /* Créer les colonnes */
+        GtkCellRenderer *renderer;
+        GtkTreeViewColumn *column;
+        gint i = 0;
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("ID", renderer, "text", i++, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Nom", renderer, "text", i++, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Type", renderer, "text", i++, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Jour", renderer, "text", i++, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Mois", renderer, "text", i++, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Année", renderer, "text", i++, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Heure", renderer, "text", i++, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Lieu", renderer, "text", i++, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+        
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes("Capacité Max", renderer, "text", i++, NULL);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+    } else {
+        store = GTK_LIST_STORE(model);
+    }
+    
+    /* Charger les événements depuis le fichier */
+    Event *evenements;
+    int nombre_evenements;
+    
+    evenements = chargerEvenements("evenements.txt", &nombre_evenements);
+    
+    if (evenements != NULL) {
+        GtkTreeIter iter;
+        for (int i = 0; i < nombre_evenements; i++) {
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter,
+                0, evenements[i].id,
+                1, evenements[i].nom,
+                2, evenements[i].type,
+                3, evenements[i].jour,
+                4, evenements[i].mois,
+                5, evenements[i].annee,
+                6, evenements[i].heure,
+                7, evenements[i].lieu,
+                8, evenements[i].capacite_max,
+                -1);
+        }
+        free(evenements);
+    }
+}
+
+/* Fonction pour charger les résultats de recherche dans le treeview */
+void charger_recherche_dans_treeview(GtkWidget *treeview, Event *resultats, int nombre_resultats) {
+    /* Vider le treeview existant */
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    if (model != NULL) {
+        GtkListStore *store = GTK_LIST_STORE(model);
+        gtk_list_store_clear(store);
+    }
+    
+    /* Créer un nouveau store si nécessaire */
+    GtkListStore *store;
+    if (model == NULL) {
+        store = gtk_list_store_new(9, 
+            G_TYPE_INT,     // ID
+            G_TYPE_STRING,  // NOM
+            G_TYPE_STRING,  // TYPE
+            G_TYPE_INT,     // JOUR
+            G_TYPE_INT,     // MOIS
+            G_TYPE_INT,     // ANNEE
+            G_TYPE_STRING,  // HEURE
+            G_TYPE_STRING,  // LIEU
+            G_TYPE_INT      // CAPACITE_MAX
+        );
+        
+        gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), GTK_TREE_MODEL(store));
+        g_object_unref(store);
+        
+        /* Créer les colonnes - SIMPLIFIÉ (pas besoin de recréer si elles existent déjà) */
+    } else {
+        store = GTK_LIST_STORE(model);
+    }
+    
+    /* Ajouter les résultats */
+    if (resultats != NULL && nombre_resultats > 0) {
+        GtkTreeIter iter;
+        for (int i = 0; i < nombre_resultats; i++) {
+            gtk_list_store_append(store, &iter);
+            gtk_list_store_set(store, &iter,
+                0, resultats[i].id,
+                1, resultats[i].nom,
+                2, resultats[i].type,
+                3, resultats[i].jour,
+                4, resultats[i].mois,
+                5, resultats[i].annee,
+                6, resultats[i].heure,
+                7, resultats[i].lieu,
+                8, resultats[i].capacite_max,
+                -1);
+        }
+    }
+}
+
+/* Fonction pour vider le treeview */
+void vider_treeview(GtkWidget *treeview) {
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
+    if (model != NULL) {
+        GtkListStore *store = GTK_LIST_STORE(model);
+        gtk_list_store_clear(store);
+    }
+}
+
+/* Callback pour ajouter un événement */
+void on_button_ajouter_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer les widgets */
+    GtkWidget *entry_nom = lookup_widget(window, "entry_nom");
+    GtkWidget *entry_type = lookup_widget(window, "entry_type");
+    GtkWidget *spin_jour = lookup_widget(window, "spinbutton_jour");
+    GtkWidget *spin_mois = lookup_widget(window, "spinbutton_mois");
+    GtkWidget *spin_annee = lookup_widget(window, "spinbutton_annee");
+    GtkWidget *entry_heure = lookup_widget(window, "entry_heure");
+    GtkWidget *entry_lieu = lookup_widget(window, "entry_lieu");
+    GtkWidget *spin_capacite = lookup_widget(window, "spinbutton_capacite");
+    
+    /* Validation des widgets */
+    if (!entry_nom || !entry_type || !spin_jour || !spin_mois || !spin_annee ||
+        !entry_heure || !entry_lieu || !spin_capacite) {
+        afficher_message(window, "Erreur interne: Widgets non trouvés!", "error");
+        return;
+    }
+    
+    /* Récupérer les valeurs */
+    const gchar *nom = gtk_entry_get_text(GTK_ENTRY(entry_nom));
+    const gchar *type = gtk_entry_get_text(GTK_ENTRY(entry_type));
+    const gchar *heure = gtk_entry_get_text(GTK_ENTRY(entry_heure));
+    const gchar *lieu = gtk_entry_get_text(GTK_ENTRY(entry_lieu));
+    
+    gint jour = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_jour));
+    gint mois = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_mois));
+    gint annee = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_annee));
+    gint capacite_max = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_capacite));
+    
+    /* Validation des champs obligatoires */
+    if (strlen(nom) == 0) {
+        afficher_message(window, "Le nom de l'événement est obligatoire!", "error");
+        return;
+    }
+    
+    if (strlen(type) == 0) {
+        afficher_message(window, "Le type d'événement est obligatoire!", "error");
+        return;
+    }
+    
+    if (strlen(lieu) == 0) {
+        afficher_message(window, "Le lieu est obligatoire!", "error");
+        return;
+    }
+    
+    /* Validation de la date */
+    if (jour < 1 || jour > 31) {
+        afficher_message(window, "Jour invalide! Doit être entre 1 et 31.", "error");
+        return;
+    }
+    
+    if (mois < 1 || mois > 12) {
+        afficher_message(window, "Mois invalide! Doit être entre 1 et 12.", "error");
+        return;
+    }
+    
+    if (annee < 2000 || annee > 2100) {
+        afficher_message(window, "Année invalide! Doit être entre 2000 et 2100.", "error");
+        return;
+    }
+    
+    /* Validation de l'heure (format HH:MM) */
+    if (strlen(heure) > 0) {
+        int h, m;
+        if (sscanf(heure, "%d:%d", &h, &m) != 2 || h < 0 || h > 23 || m < 0 || m > 59) {
+            afficher_message(window, "Format d'heure invalide! Utilisez HH:MM (ex: 14:30)", "error");
+            return;
+        }
+    }
+    
+    /* Validation de la capacité */
+    if (capacite_max <= 0) {
+        afficher_message(window, "La capacité doit être supérieure à 0!", "error");
+        return;
+    }
+    
+    /* Générer un ID pour l'événement */
+    int id = generer_id_evenement("evenements.txt");  // CORRECTION: nom de fonction
+    
+    /* Créer la structure événement */
+    Event nouvel_evenement;
+    nouvel_evenement.id = id;
+    
+    strncpy(nouvel_evenement.nom, nom, sizeof(nouvel_evenement.nom) - 1);
+    nouvel_evenement.nom[sizeof(nouvel_evenement.nom) - 1] = '\0';
+    
+    strncpy(nouvel_evenement.type, type, sizeof(nouvel_evenement.type) - 1);
+    nouvel_evenement.type[sizeof(nouvel_evenement.type) - 1] = '\0';
+    
+    nouvel_evenement.jour = jour;
+    nouvel_evenement.mois = mois;
+    nouvel_evenement.annee = annee;
+    
+    strncpy(nouvel_evenement.heure, heure, sizeof(nouvel_evenement.heure) - 1);
+    nouvel_evenement.heure[sizeof(nouvel_evenement.heure) - 1] = '\0';
+    
+    strncpy(nouvel_evenement.lieu, lieu, sizeof(nouvel_evenement.lieu) - 1);
+    nouvel_evenement.lieu[sizeof(nouvel_evenement.lieu) - 1] = '\0';
+    
+    nouvel_evenement.capacite_max = capacite_max;
+    
+    /* Ajouter l'événement */
+    int resultat = ajouter_event("evenements.txt", nouvel_evenement);
+    
+    if (resultat == 1) {
+        char message[512];
+        snprintf(message, sizeof(message),
+                "Événement ajouté avec succès!\n\n"
+                "ID: %d\n"
+                "Nom: %s\n"
+                "Type: %s\n"
+                "Date: %02d/%02d/%04d\n"
+                "Heure: %s\n"
+                "Lieu: %s\n"
+                "Capacité Max: %d",
+                id, nom, type, jour, mois, annee, heure, lieu, capacite_max);
+        
+        afficher_message(window, message, "info");
+        
+        /* Réinitialiser les champs */
+        gtk_entry_set_text(GTK_ENTRY(entry_nom), "");
+        gtk_entry_set_text(GTK_ENTRY(entry_type), "");
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_jour), 1);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_mois), 1);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_annee), 2025);
+        gtk_entry_set_text(GTK_ENTRY(entry_heure), "00:00");
+        gtk_entry_set_text(GTK_ENTRY(entry_lieu), "");
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_capacite), 10);
+    } else {
+        afficher_message(window, "Erreur lors de l'ajout de l'événement!", "error");
+    }
+}
+
+/* Callback pour rechercher un événement */
+void on_button_chercher_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer les widgets */
+    GtkWidget *entry_recherche = lookup_widget(window, "entry_recherche");
+    GtkWidget *treeview_resultats = lookup_widget(window, "treeview_resultats");
+    
+    if (!entry_recherche || !treeview_resultats) {
+        afficher_message(window, "Erreur interne: Widgets non trouvés!", "error");
+        return;
+    }
+    
+    /* Récupérer le critère de recherche */
+    const gchar *critere = gtk_entry_get_text(GTK_ENTRY(entry_recherche));
+    
+    if (strlen(critere) == 0) {
+        afficher_message(window, "Veuillez entrer un critère de recherche!", "warning");
+        return;
+    }
+    
+    /* Rechercher les événements */
+    int id_recherche = atoi(critere);  /* Si c'est un ID numérique */
+    
+    if (id_recherche > 0) {
+        /* Recherche par ID */
+        Event resultat = chercher_event("evenements.txt", id_recherche);
+        
+        if (resultat.id != -1) {
+            /* Afficher le résultat */
+            Event *resultats = malloc(sizeof(Event));
+            if (resultats != NULL) {
+                resultats[0] = resultat;
+                charger_recherche_dans_treeview(treeview_resultats, resultats, 1);
+                afficher_message(window, "Événement trouvé!", "info");
+                free(resultats);
+            }
+        } else {
+            afficher_message(window, "Aucun événement trouvé avec cet ID.", "info");
+            vider_treeview(treeview_resultats);
+        }
+    } else {
+        /* Recherche par nom, type ou lieu - on charge tout et on filtre */
+        Event *tous_evenements;
+        int nombre_total;
+        
+        tous_evenements = chargerEvenements("evenements.txt", &nombre_total);
+        
+        if (tous_evenements != NULL) {
+            Event *resultats = malloc(sizeof(Event) * nombre_total);
+            int nombre_resultats = 0;
+            
+            for (int i = 0; i < nombre_total; i++) {
+                if (strstr(tous_evenements[i].nom, critere) != NULL ||
+                    strstr(tous_evenements[i].type, critere) != NULL ||
+                    strstr(tous_evenements[i].lieu, critere) != NULL) {
+                    resultats[nombre_resultats++] = tous_evenements[i];
+                }
+            }
+            
+            if (nombre_resultats > 0) {
+                charger_recherche_dans_treeview(treeview_resultats, resultats, nombre_resultats);
+                
+                char message[256];
+                snprintf(message, sizeof(message), "%d événement(s) trouvé(s).", nombre_resultats);
+                afficher_message(window, message, "info");
+            } else {
+                afficher_message(window, "Aucun événement trouvé avec ce critère.", "info");
+                vider_treeview(treeview_resultats);
+            }
+            
+            free(resultats);
+            free(tous_evenements);
+        } else {
+            vider_treeview(treeview_resultats);
+        }
+    }
+}
+
+/* Callback pour modifier un événement */
+void on_button_modifier_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer les widgets */
+    GtkWidget *entry_id_modif = lookup_widget(window, "entry_id_modif");
+    GtkWidget *entry_nom_modif = lookup_widget(window, "entry_nom_modif");
+    GtkWidget *entry_type_modif = lookup_widget(window, "entry_type_modif");
+    GtkWidget *spin_jour_modif = lookup_widget(window, "spinbutton_jour_modif");
+    GtkWidget *spin_mois_modif = lookup_widget(window, "spinbutton_mois_modif");
+    GtkWidget *spin_annee_modif = lookup_widget(window, "spinbutton_annee_modif");
+    GtkWidget *entry_heure_modif = lookup_widget(window, "entry_heure_modif");
+    GtkWidget *entry_lieu_modif = lookup_widget(window, "entry_lieu_modif");
+    GtkWidget *spin_capacite_modif = lookup_widget(window, "spinbutton_capacite_modif");
+    
+    if (!entry_id_modif) {
+        afficher_message(window, "Erreur interne: Widgets non trouvés!", "error");
+        return;
+    }
+    
+    /* Récupérer l'ID */
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id_modif));
+    
+    if (strlen(id_text) == 0) {
+        afficher_message(window, "L'ID de l'événement à modifier est obligatoire!", "error");
+        return;
+    }
+    
+    int id = atoi(id_text);
+    if (id <= 0) {
+        afficher_message(window, "ID invalide!", "error");
+        return;
+    }
+    
+    /* Charger l'événement existant */
+    Event evenement_existant = chercher_event("evenements.txt", id);
+    if (evenement_existant.id == -1) {
+        afficher_message(window, "Événement non trouvé!", "error");
+        return;
+    }
+    
+    /* Récupérer les nouvelles valeurs ou garder les anciennes */
+    char nom[100], type[50], heure[10], lieu[100];
+    int jour, mois, annee, capacite_max;
+    
+    if (entry_nom_modif && strlen(gtk_entry_get_text(GTK_ENTRY(entry_nom_modif))) > 0) {
+        strncpy(nom, gtk_entry_get_text(GTK_ENTRY(entry_nom_modif)), sizeof(nom) - 1);
+        nom[sizeof(nom) - 1] = '\0';
+    } else {
+        strncpy(nom, evenement_existant.nom, sizeof(nom) - 1);
+        nom[sizeof(nom) - 1] = '\0';
+    }
+    
+    if (entry_type_modif && strlen(gtk_entry_get_text(GTK_ENTRY(entry_type_modif))) > 0) {
+        strncpy(type, gtk_entry_get_text(GTK_ENTRY(entry_type_modif)), sizeof(type) - 1);
+        type[sizeof(type) - 1] = '\0';
+    } else {
+        strncpy(type, evenement_existant.type, sizeof(type) - 1);
+        type[sizeof(type) - 1] = '\0';
+    }
+    
+    if (spin_jour_modif) {
+        jour = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_jour_modif));
+    } else {
+        jour = evenement_existant.jour;
+    }
+    
+    if (spin_mois_modif) {
+        mois = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_mois_modif));
+    } else {
+        mois = evenement_existant.mois;
+    }
+    
+    if (spin_annee_modif) {
+        annee = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_annee_modif));
+    } else {
+        annee = evenement_existant.annee;
+    }
+    
+    if (entry_heure_modif && strlen(gtk_entry_get_text(GTK_ENTRY(entry_heure_modif))) > 0) {
+        strncpy(heure, gtk_entry_get_text(GTK_ENTRY(entry_heure_modif)), sizeof(heure) - 1);
+        heure[sizeof(heure) - 1] = '\0';
+    } else {
+        strncpy(heure, evenement_existant.heure, sizeof(heure) - 1);
+        heure[sizeof(heure) - 1] = '\0';
+    }
+    
+    if (entry_lieu_modif && strlen(gtk_entry_get_text(GTK_ENTRY(entry_lieu_modif))) > 0) {
+        strncpy(lieu, gtk_entry_get_text(GTK_ENTRY(entry_lieu_modif)), sizeof(lieu) - 1);
+        lieu[sizeof(lieu) - 1] = '\0';
+    } else {
+        strncpy(lieu, evenement_existant.lieu, sizeof(lieu) - 1);
+        lieu[sizeof(lieu) - 1] = '\0';
+    }
+    
+    if (spin_capacite_modif) {
+        capacite_max = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_capacite_modif));
+    } else {
+        capacite_max = evenement_existant.capacite_max;
+    }
+    
+    /* Validation */
+    if (strlen(nom) == 0) {
+        afficher_message(window, "Le nom est obligatoire!", "error");
+        return;
+    }
+    
+    if (strlen(type) == 0) {
+        afficher_message(window, "Le type est obligatoire!", "error");
+        return;
+    }
+    
+    if (strlen(lieu) == 0) {
+        afficher_message(window, "Le lieu est obligatoire!", "error");
+        return;
+    }
+    
+    /* Validation de la capacité */
+    if (capacite_max <= 0) {
+        afficher_message(window, "La capacité doit être supérieure à 0!", "error");
+        return;
+    }
+    
+    /* Modifier l'événement */
+    Event evenement_modifie;
+    evenement_modifie.id = id;
+    strncpy(evenement_modifie.nom, nom, sizeof(evenement_modifie.nom) - 1);
+    evenement_modifie.nom[sizeof(evenement_modifie.nom) - 1] = '\0';
+    strncpy(evenement_modifie.type, type, sizeof(evenement_modifie.type) - 1);
+    evenement_modifie.type[sizeof(evenement_modifie.type) - 1] = '\0';
+    evenement_modifie.jour = jour;
+    evenement_modifie.mois = mois;
+    evenement_modifie.annee = annee;
+    strncpy(evenement_modifie.heure, heure, sizeof(evenement_modifie.heure) - 1);
+    evenement_modifie.heure[sizeof(evenement_modifie.heure) - 1] = '\0';
+    strncpy(evenement_modifie.lieu, lieu, sizeof(evenement_modifie.lieu) - 1);
+    evenement_modifie.lieu[sizeof(evenement_modifie.lieu) - 1] = '\0';
+    evenement_modifie.capacite_max = capacite_max;
+    
+    int resultat = modifier_event("evenements.txt", id, evenement_modifie);
+    
+    if (resultat == 1) {
+        char message[512];
+        snprintf(message, sizeof(message),
+                "Événement modifié avec succès!\n\n"
+                "ID: %d\n"
+                "Nom: %s\n"
+                "Type: %s\n"
+                "Date: %02d/%02d/%04d\n"
+                "Heure: %s\n"
+                "Lieu: %s\n"
+                "Capacité Max: %d",
+                id, nom, type, jour, mois, annee, heure, lieu, capacite_max);
+        
+        afficher_message(window, message, "info");
+        
+        /* Réinitialiser les champs */
+        if (entry_id_modif) gtk_entry_set_text(GTK_ENTRY(entry_id_modif), "");
+        if (entry_nom_modif) gtk_entry_set_text(GTK_ENTRY(entry_nom_modif), "");
+        if (entry_type_modif) gtk_entry_set_text(GTK_ENTRY(entry_type_modif), "");
+        if (spin_jour_modif) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_jour_modif), 1);
+        if (spin_mois_modif) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_mois_modif), 1);
+        if (spin_annee_modif) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_annee_modif), 2025);
+        if (entry_heure_modif) gtk_entry_set_text(GTK_ENTRY(entry_heure_modif), "00:00");
+        if (entry_lieu_modif) gtk_entry_set_text(GTK_ENTRY(entry_lieu_modif), "");
+        if (spin_capacite_modif) gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_capacite_modif), 10);
+    } else if (resultat == 0) {
+        afficher_message(window, "Événement non trouvé!", "error");
+    } else {
+        afficher_message(window, "Erreur lors de la modification de l'événement!", "error");
+    }
+}
+
+/* Callback pour supprimer un événement */
+void on_button_supprimer_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer le widget */
+    GtkWidget *entry_id_supp = lookup_widget(window, "entry_id_supp");
+    
+    if (!entry_id_supp) {
+        afficher_message(window, "Erreur interne: Widget non trouvé!", "error");
+        return;
+    }
+    
+    /* Récupérer l'ID */
+    const gchar *id_text = gtk_entry_get_text(GTK_ENTRY(entry_id_supp));
+    
+    if (strlen(id_text) == 0) {
+        afficher_message(window, "Veuillez entrer l'ID de l'événement à supprimer!", "error");
+        return;
+    }
+    
+    int id = atoi(id_text);
+    if (id <= 0) {
+        afficher_message(window, "ID invalide!", "error");
+        return;
+    }
+    
+    /* Demander confirmation */
+    GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+                                              GTK_DIALOG_MODAL,
+                                              GTK_MESSAGE_QUESTION,
+                                              GTK_BUTTONS_YES_NO,
+                                              "Êtes-vous sûr de vouloir supprimer l'événement ID %d?", id);
+    gtk_window_set_title(GTK_WINDOW(dialog), "Confirmation de suppression");
+    
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+    
+    if (response == GTK_RESPONSE_YES) {
+        /* Supprimer l'événement */
+        int resultat = supprimer_event("evenements.txt", id);
+        
+        if (resultat == 1) {
+            char message[256];
+            snprintf(message, sizeof(message), "Événement ID %d supprimé avec succès!", id);
+            afficher_message(window, message, "info");
+            
+            /* Réinitialiser le champ */
+            gtk_entry_set_text(GTK_ENTRY(entry_id_supp), "");
+        } else if (resultat == 0) {
+            afficher_message(window, "Événement non trouvé!", "error");
+        } else {
+            afficher_message(window, "Erreur lors de la suppression de l'événement!", "error");
+        }
+    }
+}
+
+/* Callback pour afficher tous les événements */
+void on_button_afficher_tous_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window1 = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Créer la fenêtre d'affichage */
+    GtkWidget *window2 = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window2), "Liste des Événements");
+    gtk_window_set_default_size(GTK_WINDOW(window2), 1000, 500);
+    gtk_window_set_position(GTK_WINDOW(window2), GTK_WIN_POS_CENTER);
+    gtk_window_set_transient_for(GTK_WINDOW(window2), GTK_WINDOW(window1));
+    
+    /* Créer un conteneur principal */
+    GtkWidget *vbox = gtk_vbox_new(FALSE, 5);
+    gtk_container_add(GTK_CONTAINER(window2), vbox);
+    gtk_container_set_border_width(GTK_CONTAINER(window2), 10);
+    
+    /* Créer le treeview */
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    
+    GtkWidget *treeview = gtk_tree_view_new();
+    gtk_container_add(GTK_CONTAINER(scrolled_window), treeview);
+    
+    /* Ajouter un ID au treeview pour pouvoir le retrouver */
+    g_object_set_data(G_OBJECT(window2), "treeview_evenements", treeview);
+    
+    /* Créer les boutons */
+    GtkWidget *hbox = gtk_hbox_new(TRUE, 10);
+    
+    GtkWidget *button_actualiser = gtk_button_new_with_label("Actualiser");
+    GtkWidget *button_fermer = gtk_button_new_with_label("Fermer");
+    
+    gtk_box_pack_start(GTK_BOX(hbox), button_actualiser, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), button_fermer, FALSE, FALSE, 0);
+    
+    /* Ajouter les widgets au conteneur principal */
+    gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 5);
+    
+    /* Charger les événements */
+    charger_evenements_dans_treeview(treeview);
+    
+    /* Connecter les signaux */
+    g_signal_connect(button_actualiser, "clicked", 
+                     G_CALLBACK(on_button_actualiser_clicked2), window2);
+    g_signal_connect(button_fermer, "clicked", 
+                     G_CALLBACK(on_button_fermer_clicked2), window2);
+    g_signal_connect(window2, "destroy", 
+                     G_CALLBACK(gtk_widget_destroy), NULL);
+    
+    /* Afficher la fenêtre */
+    gtk_widget_show_all(window2);
+}
+
+/* Callback pour actualiser la liste */
+void on_button_actualiser_clicked2(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = GTK_WIDGET(user_data);
+    
+    /* Récupérer le treeview */
+    GtkWidget *treeview = g_object_get_data(G_OBJECT(window), "treeview_evenements");
+    
+    if (treeview != NULL) {
+        charger_evenements_dans_treeview(treeview);
+        afficher_message(window, "Liste des événements actualisée!", "info");
+    }
+}
+
+/* Callback pour fermer la fenêtre */
+void on_button_fermer_clicked2(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = GTK_WIDGET(user_data);
+    gtk_widget_destroy(window);
+}
+/* Callback pour afficher les événements dans la fenêtre de réservation */
+void on_button_afficher_res_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer le treeview */
+    GtkWidget *treeview = lookup_widget(window, "treeview2");
+    
+    if (!treeview) {
+        afficher_message(window, "Erreur interne: Treeview non trouvé!", "error");
+        return;
+    }
+    
+    /* Charger les événements dans le treeview */
+    charger_evenements_dans_treeview(treeview);
+    
+    /* Compter les événements */
+    int count = 0;
+    Event *events = chargerEvenements("evenements.txt", &count);
+    
+    if (events != NULL) {
+        char message[256];
+        snprintf(message, sizeof(message), "%d événement(s) disponible(s)!", count);
+        afficher_message(window, message, "info");
+        free(events);
+    } else {
+        afficher_message(window, "Aucun événement disponible!", "info");
+    }
+}
+
+/* Callback pour s'inscrire à un événement */
+void on_S_inscrire_clicked(GtkWidget *button, gpointer user_data) {
+    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+    
+    /* Récupérer les widgets */
+    GtkWidget *entry_id_user = lookup_widget(window, "entryIDreservation");
+    GtkWidget *entry_id_event = lookup_widget(window, "entryChoisir");
+    
+    if (!entry_id_user || !entry_id_event) {
+        afficher_message(window, "Erreur interne: Widgets non trouvés!", "error");
+        return;
+    }
+    
+    /* Récupérer les valeurs */
+    const gchar *id_user_text = gtk_entry_get_text(GTK_ENTRY(entry_id_user));
+    const gchar *id_event_text = gtk_entry_get_text(GTK_ENTRY(entry_id_event));
+    
+    /* Validation */
+    if (strlen(id_user_text) == 0) {
+        afficher_message(window, "Veuillez entrer votre ID!", "error");
+        return;
+    }
+    
+    if (strlen(id_event_text) == 0) {
+        afficher_message(window, "Veuillez choisir l'ID de l'événement!", "error");
+        return;
+    }
+    
+    int id_event = atoi(id_event_text);
+    if (id_event <= 0) {
+        afficher_message(window, "ID d'événement invalide!", "error");
+        return;
+    }
+    
+    /* Vérifier si l'événement existe et a de la capacité */
+    Event evenement = chercher_event("evenements.txt", id_event);
+    
+    if (evenement.id == -1) {
+        afficher_message(window, "Événement non trouvé!", "error");
+        return;
+    }
+    
+    /* Vérifier la capacité */
+    if (evenement.nb_inscriptions >= evenement.capacite_max) {
+        afficher_message(window, "Désolé, cet événement est complet!", "warning");
+        return;
+    }
+    
+    /* Incrémenter le nombre d'inscriptions */
+    evenement.nb_inscriptions++;
+    
+    /* Mettre à jour l'événement dans le fichier */
+    int resultat = modifier_event("evenements.txt", id_event, evenement);
+    
+    if (resultat == 1) {
+        char message[512];
+        snprintf(message, sizeof(message),
+                "Inscription réussie!\n\n"
+                "Événement: %s\n"
+                "Date: %02d/%02d/%04d\n"
+                "Heure: %s\n"
+                "Lieu: %s\n\n"
+                "Places restantes: %d/%d",
+                evenement.nom,
+                evenement.jour, evenement.mois, evenement.annee,
+                evenement.heure,
+                evenement.lieu,
+                evenement.capacite_max - evenement.nb_inscriptions,
+                evenement.capacite_max);
+        
+        afficher_message(window, message, "info");
+        
+        /* Réinitialiser les champs */
+        gtk_entry_set_text(GTK_ENTRY(entry_id_event), "");
+        
+        /* Actualiser le treeview */
+        GtkWidget *treeview = lookup_widget(window, "treeview2");
+        if (treeview) {
+            charger_evenements_dans_treeview(treeview);
+        }
+    } else {
+        afficher_message(window, "Erreur lors de l'inscription!", "error");
+    }
+}
+
