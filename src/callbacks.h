@@ -259,4 +259,284 @@ void sauvegarder_emploi_entraineur(GtkWidget *treeview, const char *entraineur_i
 void
 on_button51_clicked                    (GtkButton       *button,
                                         gpointer         user_data);
+<<<<<<< HEAD
+=======
+//gestion du cours
+
+
+// Variables globales
+extern int jours_selectionnes[5];
+extern char periode_selectionnee[3];
+
+// Prototypes des fonctions principales
+void on_buttonAjouterAjouterYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonAnnulerAjouterYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonAutoID_clicked(GtkButton *button, gpointer user_data); // NOUVEAU
+void on_button2_clicked(GtkButton *button, gpointer user_data);
+void on_buttonValideSupprimerYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonAnnulerSupprimerYCH_clicked(GtkButton *button, gpointer user_data);
+void on_toolbutton12_clicked(GtkToolButton *toolbutton, gpointer user_data);
+void on_toolbutton13ych_recharger_clicked(GtkToolButton *toolbutton, gpointer user_data);
+void on_toolbutton14_clicked(GtkToolButton *toolbutton, gpointer user_data);
+void on_buttonSinscrirYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonEXITMENBREYCH_clicked(GtkButton *button, gpointer user_data);
+void on_buttonAfficherStats_clicked(GtkButton *button, gpointer user_data);
+
+// Callbacks pour les cases à cocher
+void on_checkbuttonLundiAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_checkbuttonMardiAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_checkbuttonMercrediAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_checkbuttonJeudiAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+void on_checkbuttonVendrediAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+
+// Callbacks pour les boutons radio
+void on_radiobuttonMatinAjouterYCH_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+
+// Callbacks pour les TreeView
+void on_treeviewSupprimerYCH_row_activated(GtkTreeView *treeview, GtkTreePath *path, 
+                                          GtkTreeViewColumn *column, gpointer user_data);
+void on_treeviewRECHARCHEYCH_row_activated(GtkTreeView *treeview, GtkTreePath *path, 
+                                          GtkTreeViewColumn *column, gpointer user_data);
+void on_treeviewSupprimerYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data);
+void on_treeviewRECHARCHEYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data);
+void on_treeviewinscriptionYCH_row_activated(GtkTreeView *treeview, GtkTreePath *path, 
+                                           GtkTreeViewColumn *column, gpointer user_data);
+void on_treeviewinscriptionYCH_cursor_changed(GtkTreeView *treeview, gpointer user_data);
+
+// Callbacks vides (pour compatibilité)
+void on_entryIdAjouterYCH_changed(GtkEditable *editable, gpointer user_data);
+void on_entryNomCourAjouterYCH_changed(GtkEditable *editable, gpointer user_data);
+void on_spinbuttonDureeAjouterYCH_change_value(GtkSpinButton *spinbutton, GtkScrollType scroll, gpointer user_data);
+void on_entryIdSupprimerYCH_changed(GtkEditable *editable, gpointer user_data);
+
+// Recherche
+void on_buttonValideRcharcherYCH_clicked(GtkButton *button, gpointer user_data);
+void on_button3_clicked(GtkButton *button, gpointer user_data);
+
+// Fonctions auxiliaires
+void afficher_message(GtkWindow *parent, const char *type, const char *message);
+void charger_cours_dans_formulaire(char *id_cours, GtkWidget *fenetre);
+void actualiser_toutes_treeviews(GtkWidget *fenetre);
+void supprimer_cours_depuis_treeview(GtkTreeView *treeview, GtkTreePath *path);
+
+
+/////////////////////EQUIPEMENT///////////
+
+void
+on_retour_acceuil_clicked              (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_buttonAjouter_clicked               (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_buttonannuler1_clicked              (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_radioDisponible_add_toggled         (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_radioReserve_add_toggled            (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_buttonannuler2_clicked              (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_buttonModifier_clicked              (GtkButton       *button,
+                                        gpointer         user_data);	
+
+void
+on_buttonRechercherMod_clicked         (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_radioDisponible_mod_toggled         (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_treeview1_row_activated             (GtkTreeView     *treeview,
+                                        GtkTreePath     *path,
+                                        GtkTreeViewColumn *column,
+                                        gpointer         user_data);
+
+void
+on_on_button_recherche_clicked_clicked (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_afficher_liste__clicked             (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_treeview_equip_disp_row_activated   (GtkTreeView     *treeview,
+                                        GtkTreePath     *path,
+                                        GtkTreeViewColumn *column,
+                                        gpointer         user_data);
+
+void
+on_button_reserver_clicked             (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_mes_reservation_clicked      (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_refresh_reserver_clicked     (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_rech_equip_dis_clicked       (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_retour_acceuil_reservation_clicked  (GtkToolButton   *toolbutton,
+                                        gpointer         user_data);
+
+void
+on_radiobutton_reserver1_toggled       (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_radiobutton_reserver2_toggled       (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_radiobutton_reserver3_toggled       (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_button_rech_reserver_clicked        (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_treeview_mes_reservation_row_activated
+                                        (GtkTreeView     *treeview,
+                                        GtkTreePath     *path,
+                                        GtkTreeViewColumn *column,
+                                        gpointer         user_data);
+
+
+
+void
+on_button_refresh_mes_reservation_clicked
+                                        (GtkButton       *button,
+                                        gpointer         user_data);
+////////////////FIN EQUIPP//////////
+#endif
+
+
+
+void
+on_equipement_clicked                  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_Evenement_clicked                   (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_cours_clicked                       (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_entraineur_clicked                  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_rejoindre_cours_clicked      (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_reserver_equip_entr_clicked  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_inscrire_centre_clicked      (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_home7_clicked                       (GtkButton       *button,
+                                        gpointer         user_data);
+
+///////////gestion des ev ////////////
+
+void
+on_AJOUTER_clicked                     (GtkWidget       *button,
+                                        gpointer         user_data);
+
+void
+on_Afficher_clicked                    (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_MODIFIER1_clicked                   (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_Retour_clicked                      (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_Chercher_clicked                    (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_S_inscrire_clicked                  (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_Afficher_l___v_clicked              (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_button_retour1_clicked              (GtkWidget       *button,
+                                        gpointer         user_data);
+
+void
+on_button_retour2_clicked              (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_button_chercher1_clicked            (GtkWidget        *button,
+                                        gpointer         user_data);
+
+void
+on_button_chercher2_clicked            (GtkWidget       *button,
+                                        gpointer         user_data);
+
+void
+on_button_afficher_res_clicked         (GtkWidget        *button,
+                                        gpointer         user_data);
+
+
+
+void charger_evenement_dans_treeview(GtkWidget *treeview, Event e);
+void vider_treeview(GtkWidget *treeview);
+void afficher_message(GtkWidget *window, const char *message, const char *type);
+void set_window_pointers(GtkWidget *gestion_ev_window, GtkWidget *reservation_window);
+
+
+
+
+void
+on_Supprimer_un___venement_clicked     (GtkButton       *button,
+                                        gpointer         user_data);
+
+
+
+
+void on_button_actualiser_clicked2(GtkButton *button, gpointer user_data);
+void on_button_fermer_clicked2(GtkButton *button, gpointer user_data);
+
+/* Helper functions */
+GtkWidget* get_widget_safe(GtkWidget *window, const char *name);
+void afficher_message(GtkWidget *window, const char *message, const char *type);
+void charger_evenement_dans_treeview(GtkWidget *treeview, Event event);
+>>>>>>> 3f991d89064254e3c56455eb5d7b298c3a7f8936
 

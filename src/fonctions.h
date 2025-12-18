@@ -170,5 +170,176 @@ void afficher_profile_entraineur(const char *nom, const char *id);
 // Fonctions utilitaires
 void parser_specialites(const char *specialite_str, Specialites *spec);
 int correspond_specialites(const char *objectifs_str, const Specialites *spec_entraineur);
+//gestion du cours
+#define MAX_COURS 100
+#define MAX_INSCRIPTIONS 200
+
+typedef struct {
+    char id[10];
+    char nom[50];
+    char type[20];
+    char niveau[20];
+    char jours[100];
+    int heure;
+    int minute;
+    char periode[3];
+    char coach[50];
+    char equipement[100];
+} Cours;
+
+typedef struct {
+    char id_membre[10];
+    char id_cours[10];
+    char date[20];
+} Inscription;
+
+// Fonctions de gestion des cours
+void ajouter_cours(Cours c);
+int supprimer_cours(char *id);
+Cours rechercher_cours(char *id);
+void modifier_cours(Cours c);
+int get_tous_cours(Cours liste[]);
+void afficher_cours_treeview(GtkWidget *treeview);
+void afficher_inscriptions_treeview(GtkWidget *treeview);
+void rechercher_et_afficher(GtkWidget *treeview, char *id_recherche);
+void vider_treeview(GtkWidget *treeview);
+int cours_existe(char *id);
+
+// Fonctions de gestion des inscriptions
+void inscrire_membre(Inscription ins);
+int est_inscrit(char *id_membre, char *id_cours);
+int get_nombre_inscriptions(char *id_cours);
+
+// NOUVELLES FONCTIONS POUR AMÉLIORATIONS
+char* generer_id_automatique();
+int verifier_id_unique(char *id);
+int verifier_format_heure(int heure, int minute);
+int verifier_format_id(char *id);
+void charger_coachs_depuis_fichier(GtkWidget *combo);
+void get_statistiques(int *total_cours, int *total_inscrits, int *cours_collectif, int *cours_individuel);
+void get_statistiques_detaillees(int *total_cours, int *total_inscrits,
+                                int *cours_collectif, int *cours_individuel,
+                                int *inscriptions_par_jour, float *moyenne_inscrits);
+
+// Fonctions d'édition dans TreeView
+void on_nom_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
+void on_type_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
+void on_niveau_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
+void on_coach_cours_edited(GtkCellRendererText *renderer, gchar *path, gchar *new_text, gpointer user_data);
+///////////////////////EQUIPEMENT////////////////
+
+typedef struct {
+char id[16];
+char nom[80];
+int type[4];
+int etat;
+int  disponibilite;
+int quantite;
+} equip;
+//reservation un equipement
+typedef struct {
+    char id_equip[16];
+    char nom_client[80];
+    int quantite_reservee;
+    char creneaux[20];
+} reservation;
+
+/* Colonnes de la TreeView */
+enum
+{
+    COL_ID,
+    COL_NOM,
+    COL_TYPE,
+    COL_ETAT,
+    COL_DISPO,
+    COL_QUANTITE,
+    N_COLUMNS
+};
+
+/* Colonnes de la TreeView pour les RÉSERVATIONS */
+enum
+{
+    RES_COL_ID_EQUIP,
+    RES_COL_NOM_CLIENT,
+    RES_COL_QUANTITE,
+    RES_COL_CRENEAUX,
+    RES_COL_N_COLUMNS
+};
+
+int ajouter_equip(char *filename,equip e);
+int modifier_equip(char *filename,char *id, equip mouv);
+int supprimer_equip(char *filename, char *id);
+equip chercher(char *filename,char *id);
+void afficher_equipements_disponibles(char *filename);
+
+
+// Fonctions pour réservations
+int reserver_equip(char *filename_equip, char *filename_reserv, char *id, int quantite, char *nom_client, char *creneaux);
+void afficher_reservations(char *filename_reserv);
+int annuler_reservation(char *filename_reserv, char *id_equip);
+/* Fonctions d’affichage dans la TreeView */
+void afficher_equipements_tree(GtkTreeView *liste, const char *filename);
+void afficher_equipement_par_id_tree(GtkTreeView *liste,
+                                     const char *filename,
+                                     const char *id);
+/* NOUVELLES FONCTIONS POUR LA FENÊTRE 2 */
+void afficher_equipements_disponibles_tree(GtkTreeView *liste,
+                                           const char *filename);
+void afficher_equipement_dispo_par_id_tree(GtkTreeView *liste,
+                                           const char *filename,
+                                           const char *id);
+
+void afficher_equipements_disponibles_ui(GtkWidget *liste);
+void afficher_mes_reservations_ui(GtkWidget *liste, const char *nom_client);
+
+/* Fonctions pour les réservations tree */
+static void init_reservations_columns_if_needed(GtkTreeView *liste);
+void afficher_reservations_tree(GtkTreeView *liste, const char *filename, const char *nom_client);
+
+///////////FIN EQUIPEMENT//////////////////
+
+
+
+///////////gestion des ev//////////
+
+typedef struct _GtkWidget GtkWidget;
+typedef struct {
+    int id;  // Changed from char[100] to int
+    char nom[100];
+    char type[50];  // Added type field
+    int jour;       // Changed from char[10] to int
+    int mois;       // Changed from char[10] to int
+    int annee;      // Changed from char[10] to int
+    char heure[20]; // Changed from int to string
+    char lieu[100];
+    int capacite_max;       // Changed from char[100] to int
+    int nb_inscriptions;    // Changed from char[100] to int and renamed
+   
+} Event;  // Using Event instead of evenement
+
+// Aliases for compatibility
+typedef Event evenement;
+
+// Functions for events
+int ajouter_event(char *filename, Event e);
+int modifier_event(char *filename, int id, Event nouv);  // Changed parameter type
+int supprimer_event(char *filename, int id);             // Changed parameter type
+Event chercher_event(char *filename, int id);            // Changed parameter type
+/* Dans gestion.h */
+int generer_id_evenement(const char *filename);
+Event* chargerEvenements(const char *filename, int *count);
+
+
+#define ajouterEvenement ajouter_event
+#define modifierEvenement modifier_event
+#define supprimerEvenement supprimer_event
+#define chercherEvenement chercher_event
+
+// New function declarations
+Event* lireTousEvenements(char *filename, int *count);
+void afficher_message(GtkWidget *window, const char *message, const char *type);
+void tester_lecture_fichier(const char *filename);
+
 
 #endif
+

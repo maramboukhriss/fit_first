@@ -160,12 +160,21 @@ ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+<<<<<<< HEAD
 ACLOCAL = ${SHELL} /home/maram/Projets/fit_first/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 AUTOCONF = ${SHELL} /home/maram/Projets/fit_first/missing autoconf
 AUTOHEADER = ${SHELL} /home/maram/Projets/fit_first/missing autoheader
 AUTOMAKE = ${SHELL} /home/maram/Projets/fit_first/missing automake-1.15
+=======
+ACLOCAL = ${SHELL} /home/farah/fit_first/missing aclocal-1.15
+AMTAR = $${TAR-tar}
+AM_DEFAULT_VERBOSITY = 1
+AUTOCONF = ${SHELL} /home/farah/fit_first/missing autoconf
+AUTOHEADER = ${SHELL} /home/farah/fit_first/missing autoheader
+AUTOMAKE = ${SHELL} /home/farah/fit_first/missing automake-1.15
+>>>>>>> 3f991d89064254e3c56455eb5d7b298c3a7f8936
 AWK = mawk
 CATALOGS = 
 CATOBJEXT = .gmo
@@ -200,7 +209,11 @@ LIBOBJS =
 LIBS = 
 LTLIBOBJS = 
 MAINT = 
+<<<<<<< HEAD
 MAKEINFO = ${SHELL} /home/maram/Projets/fit_first/missing makeinfo
+=======
+MAKEINFO = ${SHELL} /home/farah/fit_first/missing makeinfo
+>>>>>>> 3f991d89064254e3c56455eb5d7b298c3a7f8936
 MKDIR_P = /bin/mkdir -p
 MKINSTALLDIRS = ./mkinstalldirs
 MSGFMT = /usr/bin/msgfmt
@@ -229,10 +242,17 @@ STRIP =
 USE_NLS = yes
 VERSION = 0.1
 XGETTEXT = /usr/bin/xgettext
+<<<<<<< HEAD
 abs_builddir = /home/maram/Projets/fit_first/src
 abs_srcdir = /home/maram/Projets/fit_first/src
 abs_top_builddir = /home/maram/Projets/fit_first
 abs_top_srcdir = /home/maram/Projets/fit_first
+=======
+abs_builddir = /home/farah/fit_first/src
+abs_srcdir = /home/farah/fit_first/src
+abs_top_builddir = /home/farah/fit_first
+abs_top_srcdir = /home/farah/fit_first
+>>>>>>> 3f991d89064254e3c56455eb5d7b298c3a7f8936
 ac_ct_CC = gcc
 am__include = include
 am__leading_dot = .
@@ -251,7 +271,11 @@ host_alias =
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
+<<<<<<< HEAD
 install_sh = ${SHELL} /home/maram/Projets/fit_first/install-sh
+=======
+install_sh = ${SHELL} /home/farah/fit_first/install-sh
+>>>>>>> 3f991d89064254e3c56455eb5d7b298c3a7f8936
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
